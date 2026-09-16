@@ -52,6 +52,8 @@ class Parser:
         except UnicodeDecodeError:
             raise ValueError(f"[ERROR] Could not open '{actual_file}':"
                              " Invalid file type")
+        except ValueError as e:
+            raise ValueError("[ERROR]" + str(e))
         except OSError as e:
             if e.filename:
                 raise OSError(f"[ERROR] Could not open '{actual_file}':"
@@ -105,13 +107,16 @@ class Parser:
             highscores = json.loads(f.read())
 
         if not isinstance(highscores, dict):
-            raise ValueError()
+            raise ValueError("Bad format in highscores file, data must be"
+                             " represented in an object. ")
 
         for player in highscores.keys():
             if not isinstance(player, str):
-                raise ValueError()
+                raise ValueError("Bad format in highscores file, a player's"
+                                 " name must be a string")
             if not isinstance(highscores[player], int):
-                raise ValueError()
+                raise ValueError("Bad format in highscores file, a player's"
+                                 " score must be an integer")
 
         return highscores
 
