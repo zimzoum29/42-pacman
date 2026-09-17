@@ -5,6 +5,7 @@ class Action(Enum):
 
     PLAY = auto()
     LEADERBOARD = auto()
+    HOME = auto()
     QUIT = auto()
 
 class Button:

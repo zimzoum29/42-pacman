@@ -1,16 +1,30 @@
-"""Entry point of the Pac-Man game."""
-from __future__ import annotations
-
 import sys
 import time
+from typing import Union
 
-from .visual.home import Action, HomeScreen
+from .visual.button import Action
+from .visual.home import HomeScreen
+from .visual.leaderboard import LeaderboardScreen
 from .visual.window import Window, WindowError
 
 TARGET_FPS = 60
 FRAME_TIME = 1.0 / TARGET_FPS
 
+Screen = Union[HomeScreen, LeaderboardScreen]
 
+SCORES: dict[str, int] = {
+    "Sannaka": 1110,
+    "foliole": 20,
+    "Marmelade": 20,
+    "goldfish": 20,
+}
+
+def next_screen(action: Action, window: Window):
+    if action is Action.LEADERBOARD:
+        return LeaderboardScreen(window, SCORES)
+    if action is Action.PLAY:
+        print("note: the game screen is not implemented yet")
+    return HomeScreen(window)
 
 def run(window: Window):
     screen = HomeScreen(window)
@@ -22,7 +36,7 @@ def run(window: Window):
         if action is Action.QUIT:
             running = False
         elif action is not None:
-            print(f"selected: {action.name}")
+            screen = next_screen(action, window)
 
         screen.draw()
         window.present()
@@ -30,7 +44,6 @@ def run(window: Window):
         spare = FRAME_TIME - (time.monotonic() - start)
         if spare > 0:
             time.sleep(spare)
-
 
 def main():
     window = None
