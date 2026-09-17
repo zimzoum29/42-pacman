@@ -29,10 +29,20 @@ class Config(BaseModel):
     level_max_time: int = Field(ge=60, default=90)
 
 
-class Parser:
-    """Parse the configuration and highscores from the input file."""
+class FileInterface:
+    """Manage the file interactions"""
 
     def __init__(self, config_file: str) -> None:
+        """Initialize an interface containing the highscores and configuration
+
+        Attributes:
+            config_file: The path to the file containing the configuration
+
+        Raises:
+            ValueError: If there are problems in an opened file
+            OSError: If a file could not be opened
+        """
+
         actual_file: str = str(Path(config_file).resolve())
         try:
             with open(config_file) as f:
@@ -44,8 +54,10 @@ class Parser:
             )
 
         except ValidationError as e:
-            print(e)
-            exit()
+            error_msg = "[ERROR] Bad format in configuration file:"
+            for error in e.errors():
+                error_msg += f"\n - {error["loc"][0]}: {error["msg"]}"
+            raise ValueError(error_msg)
         except json.JSONDecodeError as e:
             raise ValueError(f"[ERROR] Bad json format in '{actual_file}'."
                              f" {str(e).split(" (char ")[0]}")
@@ -53,7 +65,7 @@ class Parser:
             raise ValueError(f"[ERROR] Could not open '{actual_file}':"
                              " Invalid file type")
         except ValueError as e:
-            raise ValueError("[ERROR]" + str(e))
+            raise ValueError("[ERROR] " + str(e))
         except OSError as e:
             if e.filename:
                 raise OSError(f"[ERROR] Could not open '{actual_file}':"
@@ -76,6 +88,7 @@ class Parser:
             JSONDecodeError: If the json is badly formatted.
             ValidationError: If configuration datas are invalid/missing.
         """
+
         json_file: str = ""
         for line in config_file:
             line = line.split('#')[0].rstrip() + '\n'
@@ -98,32 +111,45 @@ class Parser:
 
         Raises:
             JSONDecodeError: If the json is badly formatted.
-            ValueError: If the extracted type in the json file is not object,
-                        a player's name is not a string or if it's score isn't
-                        an integer.
+            ValueError: If the returned object does not match the
+                        needed format.
         """
+
         highscores_dir = Path(__file__).resolve().parents[1] / "highscores"
         with open(str(highscores_dir / self.config.highscore_filename)) as f:
             highscores = json.loads(f.read())
 
         if not isinstance(highscores, dict):
             raise ValueError("Bad format in highscores file, data must be"
-                             " represented in an object. ")
+                             " represented in an object.")
+        if len(highscores) > 10:
+            raise ValueError("Bad format in highscores file, there must be"
+                             " a maximum of 10 players in the highscores file")
 
         for player in highscores.keys():
             if not isinstance(player, str):
                 raise ValueError("Bad format in highscores file, a player's"
                                  " name must be a string")
-            if not isinstance(highscores[player], int):
+            import re
+            if 1 > len(player) > 10 or not bool(re.fullmatch(r'[A-Za-z0-9 ]+',
+                                                             player)):
                 raise ValueError("Bad format in highscores file, a player's"
-                                 " score must be an integer")
+                                 " name must contains between 1 and 10"
+                                 " alphanumeric characters")
+            if (not isinstance(highscores[player], int)
+                    or highscores[player] < -1):
+                raise ValueError("Bad format in highscores file, a player's"
+                                 " score must be a positive integer")
 
         return highscores
+
+    def update_highscores(self, player: str, score: int) -> None:
+        ...
 
 
 if __name__ == "__main__":
     try:
-        parser = Parser("test.json")
+        parser = FileInterface("test.json")
     except Exception as e:
         print(e)
         exit()
