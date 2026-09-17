@@ -16,9 +16,9 @@ class Action(Enum):
 BACKGROUND_PATH = "assets/menu_bg.png"
 TITLE_PATH = "assets/logo.png"
 
-TITLE_Y = 0.08
-FIRST_BUTTON_Y = 0.40
-BUTTON_SPACING = 0.04
+TITLE_Y = 0.05
+FIRST_BUTTON_Y = 0.45
+BUTTON_SPACING = 0.03
 
 
 class Button:
