@@ -143,8 +143,29 @@ class FileInterface:
 
         return highscores
 
-    def update_highscores(self, player: str, score: int) -> None:
-        ...
+    def update_highscores(self, player: str, score: int) -> dict[str, int]:
+        """Updates the highscore with a new score made by a player
+
+        Attributes:
+            player: The player's name
+            score: The score the player just made
+
+        Returns:
+            The updated highscores
+        """
+        if player in self.highscores.keys():
+            if score > self.highscores[player]:
+                self.highscores[player] = score
+                return self.highscores
+
+        lowest_player = min(self.highscores,
+                            key=lambda player: self.highscores[player])
+
+        if self.highscores[lowest_player] < score:
+            self.highscores.pop(lowest_player)
+            self.highscores[player] = score
+
+        return self.highscores
 
 
 if __name__ == "__main__":
