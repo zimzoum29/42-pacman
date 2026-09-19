@@ -10,6 +10,11 @@ TITLE_Y = 0.05
 FIRST_BUTTON_Y = 0.45
 BUTTON_SPACING = 0.03
 
+SPRITE_Y = 0.92
+SPRITE_SPEED = 11.0
+GHOST_GAP = 0.05
+FRAME_TIME_SPRITE = 9
+
 BUTTONS: tuple[tuple[str, str, Action], ...] = (
     ("assets/play.png", "assets/play_active.png", Action.PLAY),
     ("assets/leaderboard.png","assets/leaderboard_active.png",Action.LEADERBOARD),
@@ -28,8 +33,20 @@ class HomeScreen:
             Button(window, idle, active, action)
             for idle, active, action in BUTTONS
         ]
+        self._ghost = window.load_image("assets/ghost.png")
+        self._pacman_x =  -window.width * GHOST_GAP
+        self._ghost_x = 0.0
+        self._sprite_y = window.ratio_y(SPRITE_Y)
+        self._pacman_frames = [
+            window.load_image(f"assets/pacman_{i}.png")
+            for i in range(3)
+        ]
+        self._pacman_order = (0, 1, 2, 1)
+        self._pacman_phase = 0
+        self._pacman_timer = 0.0
 
     def update(self, keys: list[Key]):
+        self._move_sprites(delta=1)
         for key in keys:
             if key in (Key.QUIT, Key.ESCAPE):
                 return Action.QUIT
@@ -43,6 +60,7 @@ class HomeScreen:
 
     def draw(self):
         self._draw_background()
+        self._draw_sprites()
         self._draw_title()
         self._draw_buttons()
 
@@ -69,3 +87,31 @@ class HomeScreen:
                 x = (self._window.width - plate.get_width()) // 2
                 self._window.blit(plate, x, y)
             y += button.height + spacing
+
+    def _move_sprites(self, delta: float):
+        step = SPRITE_SPEED * delta
+        self._pacman_x += step
+        self._ghost_x += step
+        if self._pacman_x > self._window.width:
+            self._pacman_x = -self._window.width * GHOST_GAP * 2
+        if self._ghost_x > self._window.width:
+            self._ghost_x = -self._window.width * GHOST_GAP * 2
+        self._pacman_timer += delta
+        while self._pacman_timer >= FRAME_TIME_SPRITE:
+            self._pacman_timer -= FRAME_TIME_SPRITE
+            self._pacman_phase = (self._pacman_phase + 1) % len(
+                self._pacman_order
+            )
+
+    def _draw_sprites(self):
+        frame = self._pacman_frames[
+            self._pacman_order[self._pacman_phase]
+        ]
+        if frame is not None:
+            self._window.blit(
+                frame, int(self._pacman_x), self._sprite_y
+            )
+        if self._ghost is not None:
+            self._window.blit(
+                self._ghost, int(self._ghost_x), self._sprite_y
+            )
