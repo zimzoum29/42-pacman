@@ -7,4 +7,5 @@ dependencies = [
     "flake8",
     "mypy",
     "pydantic",
+    "mazegenerator",
 ]
