@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "zimzoum29", email = "timeo.gondran@hotmail.com" }
 ]
-requires-python = ">=3.15"
+requires-python = ">=3.10"
 dependencies = [
     "mazegenerator>=1.2.1",
     "pydantic>=2.14.1",
