@@ -1,8 +1,8 @@
 import pygame
 
-from ..game.maze import Map
-from .button import Action
-from .window import BLACK, Color, Key, Window
+from ...game.maze import Map
+from ..button import Action
+from ..window import BLACK, Color, Key, Window
 
 MAP_WIDTH = 28
 MAP_HEIGHT = 36

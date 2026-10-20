@@ -1,12 +1,6 @@
 from enum import Enum, auto
 from .window import Window
-
-class Action(Enum):
-
-    PLAY = auto()
-    LEADERBOARD = auto()
-    HOME = auto()
-    QUIT = auto()
+from .screen.base import Action
 
 class Button:
 
