@@ -1,39 +1,37 @@
 import sys
 import time
 from typing import Union
-import mazegenerator
 
 from .visual.button import Action
 from .visual.home import HomeScreen
 from .visual.leaderboard import LeaderboardScreen
+from .visual.game import GameScreen
 from .visual.window import Window, WindowError
 from .parsing import FileInterface
 
 TARGET_FPS = 60
 FRAME_TIME = 1.0 / TARGET_FPS
 
-Screen = Union[HomeScreen, LeaderboardScreen]
+Screen = Union[HomeScreen, LeaderboardScreen, GameScreen]
 
-def next_screen(action: Action, window: Window, highscores: dict[str, int]):
+def next_screen(action: Action, window: Window, interface: FileInterface):
     if action is Action.LEADERBOARD:
-        return LeaderboardScreen(window, highscores)
+        return LeaderboardScreen(window, interface.highscores)
     if action is Action.PLAY:
-        print("note: the game screen is not implemented yet")
+        return GameScreen(window, interface.config.seed)
     return HomeScreen(window)
 
 def run(window: Window):
+    interface = FileInterface("config.json")
     screen = HomeScreen(window)
     running = True
     while running:
         start = time.monotonic()
-        parser = FileInterface("config.json")
-        config = parser.config
-        highscores = parser.highscores
         action = screen.update(window.keys())
         if action is Action.QUIT:
             running = False
         elif action is not None:
-            screen = next_screen(action, window, highscores)
+            screen = next_screen(action, window, interface)
 
         screen.draw()
         window.present()
