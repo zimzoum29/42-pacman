@@ -111,3 +111,8 @@ class Window:
     def blit_centered_x(self, image: pygame.Surface, y: int):
         x = (self.width - image.get_width()) // 2
         self.blit(image, x, y)
+
+    def new_image(self, width: int, height: int, color: Color):
+        image = pygame.Surface((width, height))
+        image.fill(color)
+        return image
