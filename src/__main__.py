@@ -26,7 +26,7 @@ def run(window: Window):
     running = True
     while running:
         start = time.monotonic()
-        parser = FileInterface("test.json")
+        parser = FileInterface("config.json")
         config = parser.config
         highscores = parser.highscores
         action = screen.update(window.keys())
