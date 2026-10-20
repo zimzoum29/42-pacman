@@ -1,10 +1,10 @@
 import pygame
 
-from .window import Key, Window
-from .button import Action, Button
+from ..window import Key, Window
+from ..button import Action, Button
 
-BACKGROUND_PATH = "assets/menu_bg.png"
-TITLE_PATH = "assets/logo.png"
+BACKGROUND_PATH = "pacman/assets/menu_bg.png"
+TITLE_PATH = "pacman/assets/logo.png"
 
 TITLE_Y = 0.05
 FIRST_BUTTON_Y = 0.45
@@ -16,9 +16,9 @@ GHOST_GAP = 0.05
 FRAME_TIME_SPRITE = 9
 
 BUTTONS: tuple[tuple[str, str, Action], ...] = (
-    ("assets/play.png", "assets/play_active.png", Action.PLAY),
-    ("assets/leaderboard.png","assets/leaderboard_active.png",Action.LEADERBOARD),
-    ("assets/exit.png", "assets/exit_active.png", Action.QUIT),
+    ("pacman/assets/play.png", "pacman/assets/play_active.png", Action.PLAY),
+    ("pacman/assets/leaderboard.png","pacman/assets/leaderboard_active.png",Action.LEADERBOARD),
+    ("pacman/assets/exit.png", "pacman/assets/exit_active.png", Action.QUIT),
     )
 
 
@@ -33,12 +33,12 @@ class HomeScreen:
             Button(window, idle, active, action)
             for idle, active, action in BUTTONS
         ]
-        self._ghost = window.load_image("assets/ghost.png")
+        self._ghost = window.load_image("pacman/assets/ghost.png")
         self._pacman_x =  -window.width * GHOST_GAP
         self._ghost_x = 0.0
         self._sprite_y = window.ratio_y(SPRITE_Y)
         self._pacman_frames = [
-            window.load_image(f"assets/pacman_{i}.png")
+            window.load_image(f"pacman/assets/pacman_{i}.png")
             for i in range(3)
         ]
         self._pacman_order = (0, 1, 2, 1)

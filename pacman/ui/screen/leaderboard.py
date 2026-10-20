@@ -1,7 +1,7 @@
-from .button import Action, Button
-from .window import WHITE, YELLOW, Key, Window
+from ..button import Action, Button
+from ..window import WHITE, YELLOW, Key, Window
 
-BACKGROUND_PATH = "assets/menu_bg.png"
+BACKGROUND_PATH = "pacman/assets/menu_bg.png"
 
 TITLE = "LEADERBOARD"
 TITLE_Y = 0.10
