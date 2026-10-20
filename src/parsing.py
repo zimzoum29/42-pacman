@@ -1,24 +1,16 @@
 from pydantic import BaseModel, Field, ValidationError
 from typing import TextIO
-import json
 from pathlib import Path
+import json
+import os
+import re
+
+HIGHSCORES_DIR = Path(__file__).resolve().parents[1] / "highscores"
+MAX_PLAYERS = 10
+NAME_PATTERN = re.compile(r"[A-Za-z0-9 ]{1,10}")
 
 
 class Config(BaseModel):
-    """Represent the informations in the configuration file.
-
-    Attributes:
-        highscore_filename: Name of the highscore file, which will be
-                            searched in the highcores repository.
-        lives: Number of life the player has before game over.
-        points_per_pacgum: Number of points earned for "eating" a pacgum.
-        points_per_super_pacgum: Number of points earned for "eating"
-                                 a super pacgum.
-        points_per_ghost: Number of points earned for "eating" a ghost.
-        seed: The seed applied to generate the first map.
-        level_max_time: The maximum amount of seconds the player has to
-                        complete a level.
-    """
 
     highscore_filename: str = Field(min_length=1)
     lives: int = Field(ge=1)
@@ -30,28 +22,17 @@ class Config(BaseModel):
 
 
 class FileInterface:
-    """Manage the file interactions"""
 
     def __init__(self, config_file: str) -> None:
-        """Initialize an interface containing the highscores and configuration
-
-        Attributes:
-            config_file: The path to the file containing the configuration
-
-        Raises:
-            ValueError: If there are problems in an opened file
-            OSError: If a file could not be opened
-        """
 
         actual_file: str = str(Path(config_file).resolve())
         try:
             with open(config_file) as f:
                 self.config: Config = self.get_config(f)
-            actual_file = str(Path(__file__).resolve().parents[1]
-                              / "highscores" / self.config.highscore_filename)
-            self.highscores: dict[str, int] = (
-                self.get_highscores()
+            self._highscores_path: Path = (
+                HIGHSCORES_DIR / Path(self.config.highscore_filename).name
             )
+            self.highscores: dict[str, int] = self.get_highscores()
 
         except ValidationError as e:
             error_msg = "[ERROR] Bad format in configuration file:"
@@ -74,20 +55,6 @@ class FileInterface:
                 raise OSError(f"{e} ({type(e).__name__})")
 
     def get_config(self, config_file: TextIO) -> Config:
-        """Parse the configuration informations.
-
-        Attributes:
-            config_file: The opened configuration file.
-
-        Returns:
-            A Config object representing the configuration information
-            from the input file.
-
-        Raises:
-            ValueError: If the extracted type in the json file is not object.
-            JSONDecodeError: If the json is badly formatted.
-            ValidationError: If configuration datas are invalid/missing.
-        """
 
         json_file: str = ""
         for line in config_file:
@@ -101,72 +68,68 @@ class FileInterface:
                              " represented in an object")
 
         return Config(**config)
+    @staticmethod
+    def is_valid_entry(player: object, score: object) -> bool:
+        return (isinstance(player, str)
+                and NAME_PATTERN.fullmatch(player) is not None
+                and isinstance(score, int)
+                and not isinstance(score, bool)
+                and score >= 0)
+
+    @staticmethod
+    def _top(highscores: dict[str, int]) -> dict[str, int]:
+        ranking = sorted(highscores.items(),
+                         key=lambda item: item[1], reverse=True)
+        return dict(ranking[:MAX_PLAYERS])
 
     def get_highscores(self) -> dict[str, int]:
-        """Parse the highscores to get the top 10 best players and their score.
+        path = self._highscores_path
+        try:
+            with open(path) as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            return {}
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
+            print(f"[WARNING] Cannot read '{path}' ({e}),"
+                  " starting with an empty leaderboard")
+            return {}
 
-        Returns:
-            A dict representing the top ten with this format:
-            <player>: <score>.
+        if not isinstance(data, dict):
+            print(f"[WARNING] '{path}' must contain a JSON object,"
+                  " starting with an empty leaderboard")
+            return {}
 
-        Raises:
-            JSONDecodeError: If the json is badly formatted.
-            ValueError: If the returned object does not match the
-                        needed format.
-        """
-
-        highscores_dir = Path(__file__).resolve().parents[1] / "highscores"
-        with open(str(highscores_dir / self.config.highscore_filename)) as f:
-            highscores = json.loads(f.read())
-
-        if not isinstance(highscores, dict):
-            raise ValueError("Bad format in highscores file, data must be"
-                             " represented in an object.")
-        if len(highscores) > 10:
-            raise ValueError("Bad format in highscores file, there must be"
-                             " a maximum of 10 players in the highscores file")
-
-        for player in highscores.keys():
-            if not isinstance(player, str):
-                raise ValueError("Bad format in highscores file, a player's"
-                                 " name must be a string")
-            import re
-            if 1 > len(player) > 10 or not bool(re.fullmatch(r'[A-Za-z0-9 ]+',
-                                                             player)):
-                raise ValueError("Bad format in highscores file, a player's"
-                                 " name must contains between 1 and 10"
-                                 " alphanumeric characters")
-            if (not isinstance(highscores[player], int)
-                    or highscores[player] < -1):
-                raise ValueError("Bad format in highscores file, a player's"
-                                 " score must be a positive integer")
-
-        return highscores
+        highscores: dict[str, int] = {}
+        for player, score in data.items():
+            if not self.is_valid_entry(player, score):
+                print(f"[WARNING] Ignoring invalid highscore entry"
+                      f" {player!r}: {score!r}")
+                continue
+            highscores[player] = score
+        return self._top(highscores)
 
     def update_highscores(self, player: str, score: int) -> dict[str, int]:
-        """Updates the highscore with a new score made by a player
-
-        Attributes:
-            player: The player's name
-            score: The score the player just made
-
-        Returns:
-            The updated highscores
-        """
-        if player in self.highscores.keys():
-            if score > self.highscores[player]:
-                self.highscores[player] = score
-                return self.highscores
-
-        lowest_player = min(self.highscores,
-                            key=lambda player: self.highscores[player])
-
-        if self.highscores[lowest_player] < score:
-            self.highscores.pop(lowest_player)
-            self.highscores[player] = score
-
+        if not self.is_valid_entry(player, score):
+            print(f"[WARNING] Invalid highscore {player!r}: {score!r}")
+            return self.highscores
+        if score <= self.highscores.get(player, -1):
+            return self.highscores
+        self.highscores[player] = score
+        self.highscores = self._top(self.highscores)
+        self.save_highscores()
         return self.highscores
 
+    def save_highscores(self) -> None:
+        path = self._highscores_path
+        tmp = path.with_name(path.name + ".tmp")
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with open(tmp, "w") as f:
+                json.dump(self.highscores, f, indent=4)
+            os.replace(tmp, path)
+        except OSError as e:
+            print(f"[WARNING] Could not save highscores to '{path}':"
+                  f" {e.strerror}")
 
 if __name__ == "__main__":
     try:
