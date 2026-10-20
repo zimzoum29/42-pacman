@@ -1,6 +1,4 @@
 from dataclasses import dataclass
-import mazegenerator
-
 
 @dataclass
 class Cell:
@@ -17,3 +15,4 @@ class Map:
 
     def __init__(self, map: list[list[int]]) -> None:
         ...
+
