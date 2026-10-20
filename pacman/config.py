@@ -39,7 +39,6 @@ class Config:
 
     @staticmethod
     def _is_int(value: Any) -> bool:
-        """True for real integers (bool is excluded: True == 1)."""
         return isinstance(value, int) and not isinstance(value, bool)
 
     def _set_highscore_filename(self, highscore_filename: Any) -> None:

@@ -7,7 +7,7 @@ from ..window import BLACK, Color, Key, Window
 MAP_WIDTH = 28
 MAP_HEIGHT = 36
 
-HUD_HEIGHT = 0.08
+HUD_HEIGHT = 0.03
 MARGIN = 0.03
 
 WALL_COLOR: Color = (33, 33, 222)

@@ -35,7 +35,7 @@ class Cell:
     west: bool
 
     @classmethod
-    def from_value(cls, value: int) -> "Cell":
+    def from_value(cls, value: int) -> Cell:
         return cls(
             north=bool(value & NORTH_BIT),
             east=bool(value & EAST_BIT),
