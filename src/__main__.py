@@ -1,6 +1,7 @@
 import sys
 import time
 from typing import Union
+import mazegenerator
 
 from .visual.button import Action
 from .visual.home import HomeScreen
