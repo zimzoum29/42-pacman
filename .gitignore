@@ -2,3 +2,4 @@
 *test*
 *cache*
 .DS_Store
+src/__main__.py

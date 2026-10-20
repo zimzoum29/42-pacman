@@ -1,9 +1,0 @@
-{
-    "lives": 3,
-    "points_per_pacgum": 3,
-    "points_per_super_pacgum": 1,
-    "points_per_ghost": 1,
-    "seed": 42,
-    "level_max_time": 90,
-    "highscore_filename": "highscore.json"
-}

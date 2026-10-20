@@ -1,13 +1,13 @@
 import sys
 import time
 from typing import Union
-import mazegenerator
 
 from .visual.button import Action
 from .visual.home import HomeScreen
 from .visual.leaderboard import LeaderboardScreen
 from .visual.window import Window, WindowError
 from .parsing import FileInterface
+from .game.maze import Map
 
 TARGET_FPS = 60
 FRAME_TIME = 1.0 / TARGET_FPS
@@ -26,7 +26,7 @@ def run(window: Window):
     running = True
     while running:
         start = time.monotonic()
-        parser = FileInterface("config.json")
+        parser = FileInterface("test.json")
         config = parser.config
         highscores = parser.highscores
         action = screen.update(window.keys())
@@ -44,6 +44,8 @@ def run(window: Window):
 
 def main():
     window = None
+    map = Map(20, 20, 42)
+    print(map.cells)
     try:
         window = Window()
         run(window)
