@@ -8,13 +8,9 @@ from .visual.leaderboard import LeaderboardScreen
 from .visual.game import GameScreen
 from .visual.window import Window, WindowError
 from .parsing import FileInterface
-from .game.maze import Map
 
 TARGET_FPS = 60
 FRAME_TIME = 1.0 / TARGET_FPS
-
-MAZE_HEIGHT = 20
-MAZE_WIDTH = 20 
 
 Screen = Union[HomeScreen, LeaderboardScreen, GameScreen]
 

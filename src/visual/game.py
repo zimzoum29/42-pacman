@@ -4,8 +4,8 @@ from ..game.maze import Map
 from .button import Action
 from .window import BLACK, Color, Key, Window
 
-MAP_WIDTH = 21
-MAP_HEIGHT = 15
+MAP_WIDTH = 28
+MAP_HEIGHT = 36
 
 HUD_HEIGHT = 0.08
 MARGIN = 0.03
