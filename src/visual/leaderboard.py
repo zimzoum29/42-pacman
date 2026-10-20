@@ -5,11 +5,11 @@ BACKGROUND_PATH = "assets/menu_bg.png"
 
 TITLE = "LEADERBOARD"
 TITLE_Y = 0.10
-TITLE_DIVISOR = 10
 
+TITLE_FONT_SIZE = 100
+ROW_FONT_SIZE = 45
 FIRST_ROW_Y = 0.26
 ROW_SPACING = 0.06
-ROW_DIVISOR = 22
 
 MAX_ROWS = 10
 
@@ -32,7 +32,7 @@ class LeaderboardScreen:
 
     def draw(self):
         self._draw_background()
-        self._window.text_centered(TITLE, self._window.ratio_y(TITLE_Y), self._window.font_size(TITLE_DIVISOR), YELLOW)
+        self._window.text_centered(TITLE, self._window.ratio_y(TITLE_Y), TITLE_FONT_SIZE, YELLOW)
         self._draw_rows()
 
     def _draw_background(self):
@@ -41,7 +41,7 @@ class LeaderboardScreen:
             self._window.blit_centered(self._background)
 
     def _draw_rows(self):
-        size = self._window.font_size(ROW_DIVISOR)
+        size = ROW_FONT_SIZE
         y = self._window.ratio_y(FIRST_ROW_Y)
         if not self._rows:
             self._window.text_centered("NO SCORE YET", y, size, WHITE)

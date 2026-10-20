@@ -90,7 +90,7 @@ class Window:
         self._surface.blit(image, (x, y))
 
     def text_centered(self, text: str, y: int, size: int, color: Color):
-        surface = self._font(size).render(text, True, color)
+        surface = self._font(size).render(text, False, color)
         x = (self.width - surface.get_width()) // 2
         self._surface.blit(surface, (x, y))
 
