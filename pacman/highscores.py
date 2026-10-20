@@ -1,4 +1,3 @@
-"""Load, update and save the leaderboard."""
 import json
 import os
 import re
@@ -9,7 +8,6 @@ NAME_PATTERN = re.compile(r"[A-Za-z0-9 ]{1,10}")
 
 
 class Highscores:
-    """The 10 best players and their score, saved in a JSON file."""
 
     def __init__(self, path: Path) -> None:
         self._path = path

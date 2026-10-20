@@ -2,9 +2,10 @@ import pygame
 
 from ..window import Key, Window
 from ..button import Action, Button
+from ...path import ASSET_DIR
 
-BACKGROUND_PATH = "pacman/assets/menu_bg.png"
-TITLE_PATH = "pacman/assets/logo.png"
+BACKGROUND_PATH = ASSET_DIR / "menu_bg.png"
+TITLE_PATH = ASSET_DIR / "logo.png"
 
 TITLE_Y = 0.05
 FIRST_BUTTON_Y = 0.45
@@ -16,9 +17,9 @@ GHOST_GAP = 0.05
 FRAME_TIME_SPRITE = 9
 
 BUTTONS: tuple[tuple[str, str, Action], ...] = (
-    ("pacman/assets/play.png", "pacman/assets/play_active.png", Action.PLAY),
-    ("pacman/assets/leaderboard.png","pacman/assets/leaderboard_active.png",Action.LEADERBOARD),
-    ("pacman/assets/exit.png", "pacman/assets/exit_active.png", Action.QUIT),
+    (ASSET_DIR / "play.png", ASSET_DIR / "play_active.png", Action.PLAY),
+    (ASSET_DIR / "leaderboard.png",ASSET_DIR / "leaderboard_active.png",Action.LEADERBOARD),
+    (ASSET_DIR / "exit.png", ASSET_DIR / "exit_active.png", Action.QUIT),
     )
 
 
