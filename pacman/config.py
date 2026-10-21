@@ -1,14 +1,13 @@
 import json
-from typing import Any
 
 
 class ConfigError(Exception):
-    ...
+    pass
 
 
 class Config:
 
-    default: dict[str, Any] = {
+    default: dict = {
         "highscore_filename": "highscore.json",
         "lives": 3,
         "points_per_pacgum": 10,
@@ -19,14 +18,14 @@ class Config:
     }
 
     def __init__(self,
-                 highscore_filename: Any = default["highscore_filename"],
-                 lives: Any = default["lives"],
-                 points_per_pacgum: Any = default["points_per_pacgum"],
-                 points_per_super_pacgum: Any = (
+                 highscore_filename: str = default["highscore_filename"],
+                 lives: int = default["lives"],
+                 points_per_pacgum: int = default["points_per_pacgum"],
+                 points_per_super_pacgum: int = (
                      default["points_per_super_pacgum"]),
-                 points_per_ghost: Any = default["points_per_ghost"],
-                 seed: Any = default["seed"],
-                 level_max_time: Any = default["level_max_time"]) -> None:
+                 points_per_ghost: int = default["points_per_ghost"],
+                 seed: int = default["seed"],
+                 level_max_time: int = default["level_max_time"]) -> None:
         self.config_file_errors: list[str] = []
 
         self._set_highscore_filename(highscore_filename)
@@ -37,11 +36,7 @@ class Config:
         self._set_seed(seed)
         self._set_level_max_time(level_max_time)
 
-    @staticmethod
-    def _is_int(value: Any) -> bool:
-        return isinstance(value, int) and not isinstance(value, bool)
-
-    def _set_highscore_filename(self, highscore_filename: Any) -> None:
+    def _set_highscore_filename(self, highscore_filename: str) -> None:
         error_msg = "highscore_filename"
         if not isinstance(highscore_filename, str):
             error_msg += " must be a string"
@@ -56,9 +51,9 @@ class Config:
         self.highscore_filename = self.default["highscore_filename"]
         self.config_file_errors.append(error_msg)
 
-    def _set_lives(self, lives: Any) -> None:
+    def _set_lives(self, lives: int) -> None:
         error_msg = "lives"
-        if not self._is_int(lives):
+        if not isinstance(lives, int):
             error_msg += " must be an int"
         elif lives < 1:
             error_msg += " must be > 0"
@@ -69,9 +64,9 @@ class Config:
         self.lives = self.default["lives"]
         self.config_file_errors.append(error_msg)
 
-    def _set_points_per_pacgum(self, points_per_pacgum: Any) -> None:
+    def _set_points_per_pacgum(self, points_per_pacgum: int) -> None:
         error_msg = "points_per_pacgum"
-        if not self._is_int(points_per_pacgum):
+        if not isinstance(points_per_pacgum, int):
             error_msg += " must be an int"
         elif points_per_pacgum < 1:
             error_msg += " must be > 0"
@@ -83,9 +78,9 @@ class Config:
         self.config_file_errors.append(error_msg)
 
     def _set_points_per_super_pacgum(self,
-                                     points_per_super_pacgum: Any) -> None:
+                                     points_per_super_pacgum: int) -> None:
         error_msg = "points_per_super_pacgum"
-        if not self._is_int(points_per_super_pacgum):
+        if not isinstance(points_per_super_pacgum, int):
             error_msg += " must be an int"
         elif points_per_super_pacgum < 1:
             error_msg += " must be > 0"
@@ -98,9 +93,9 @@ class Config:
         )
         self.config_file_errors.append(error_msg)
 
-    def _set_points_per_ghost(self, points_per_ghost: Any) -> None:
+    def _set_points_per_ghost(self, points_per_ghost: int) -> None:
         error_msg = "points_per_ghost"
-        if not self._is_int(points_per_ghost):
+        if not isinstance(points_per_ghost, int):
             error_msg += " must be an int"
         elif points_per_ghost < 1:
             error_msg += " must be > 0"
@@ -111,9 +106,9 @@ class Config:
         self.points_per_ghost = self.default["points_per_ghost"]
         self.config_file_errors.append(error_msg)
 
-    def _set_seed(self, seed: Any) -> None:
+    def _set_seed(self, seed: int) -> None:
         error_msg = "seed"
-        if not self._is_int(seed):
+        if not isinstance(seed, int):
             error_msg += " must be an int"
         else:
             self.seed: int = seed
@@ -122,9 +117,9 @@ class Config:
         self.seed = self.default["seed"]
         self.config_file_errors.append(error_msg)
 
-    def _set_level_max_time(self, level_max_time: Any) -> None:
+    def _set_level_max_time(self, level_max_time: int) -> None:
         error_msg = "level_max_time"
-        if not self._is_int(level_max_time):
+        if not isinstance(level_max_time, int):
             error_msg += " must be an int"
         elif level_max_time < 60:
             error_msg += " must be >= 60"
