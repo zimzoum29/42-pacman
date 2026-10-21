@@ -8,6 +8,7 @@ EAST_BIT = 2
 SOUTH_BIT = 4
 WEST_BIT = 8
 ALL_WALLS = NORTH_BIT | EAST_BIT | SOUTH_BIT | WEST_BIT
+SUPER_PACGUM_COORD = [(0,1),(1,0),(0,0),(1,1)]
 
 
 class Direction(Enum):
@@ -25,6 +26,10 @@ class Direction(Enum):
     def dy(self) -> int:
         return self.value[1]
 
+    @property
+    def opposite(self) -> Direction:
+        return Direction((-self.dx, -self.dy))
+
 
 @dataclass
 class Cell:
@@ -33,6 +38,8 @@ class Cell:
     east: bool
     south: bool
     west: bool
+    pacgum: bool = False 
+    super_pacgum: bool = False
 
     @classmethod
     def from_value(cls, value: int) -> Cell:
@@ -43,14 +50,9 @@ class Cell:
             west=bool(value & WEST_BIT),
         )
 
-    def has_wall(self, direction: Direction) -> bool:
-        walls = {
-            Direction.UP: self.north,
-            Direction.RIGHT: self.east,
-            Direction.DOWN: self.south,
-            Direction.LEFT: self.west,
-        }
-        return walls[direction]
+    @property
+    def is_closed(self) -> bool:
+        return self.north and self.east and self.south and self.west
 
 
 class Map:
@@ -60,3 +62,14 @@ class Map:
         self.width: int = len(maze[0])
         self.height: int = len(maze)
         self.cells: list[list[Cell]] = [[Cell.from_value(value) for value in row] for row in maze]
+        self._place_pacgum()
+
+    def _place_pacgum(self):
+        for line in self.cells:
+            for cell in line:
+                cell.pacgum = False if cell.is_closed else True
+        for x, y in SUPER_PACGUM_COORD:
+            self.cells[x][y].pacgum = False
+            self.cells[x][y].super_pacgum = True
+
+

@@ -43,7 +43,7 @@ class App:
 
     def _next_screen(self, action: Action) -> Screen:
         if action is Action.PLAY:
-            return GameScreen(self._window, self._config.seed)
+            return GameScreen(self._window, self._config)
         if action is Action.LEADERBOARD:
             return LeaderboardScreen(self._window, self._highscores.scores)
         return HomeScreen(self._window)

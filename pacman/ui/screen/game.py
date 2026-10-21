@@ -1,11 +1,14 @@
 import pygame
 
 from ...game.maze import Map
+from ...game.game import Game
 from ..button import Action
 from ..window import BLACK, Color, Key, Window
+from ...config import Config
+from ...game.entities import Entities
 
-MAP_WIDTH = 28
-MAP_HEIGHT = 36
+MAP_WIDTH = 20
+MAP_HEIGHT = 15
 
 HUD_HEIGHT = 0.03
 MARGIN = 0.03
@@ -13,14 +16,19 @@ MARGIN = 0.03
 WALL_COLOR: Color = (33, 33, 222)
 BLOCK_COLOR: Color = (20, 20, 120)
 
+GHOST_COORD = [(0, 0), (0, MAP_WIDTH - 1), (MAP_HEIGHT - 1, 0), (MAP_HEIGHT - 1, MAP_WIDTH - 1)]
+
 
 class GameScreen:
 
-    def __init__(self, window: Window, seed: int) -> None:
+    def __init__(self, window: Window, config: Config) -> None:
         self._window = window
-        self._map = Map(MAP_WIDTH, MAP_HEIGHT, seed)
+        self._config = config
+        self._map = Map(MAP_WIDTH, MAP_HEIGHT, self._config.seed)
+        self._game = Game(self._map, self._config)
         self._compute_layout()
         self._walls = self._build_walls()
+        self._ghosts = [Entities(x, y) for x, y in GHOST_COORD]
 
     def _compute_layout(self) -> None:
         window = self._window
@@ -28,8 +36,7 @@ class GameScreen:
         top = window.ratio_y(HUD_HEIGHT)
         free_w = window.width - 2 * margin
         free_h = window.height - top - margin
-        self._cell = min(free_w // self._map.width,
-                         free_h // self._map.height)
+        self._cell = min(free_w // self._map.width, free_h // self._map.height)
         self._thick = max(self._cell // 8, 2)
         map_w = self._cell * self._map.width
         map_h = self._cell * self._map.height
@@ -57,6 +64,11 @@ class GameScreen:
                 if cell.east and x == self._map.width - 1:
                     walls.append((v_wall, px + size, py))
         return walls
+
+    def _draw_entities(self) -> list[Entities]:
+        for ghost in self.ghosts: 
+            ...
+
 
     def cell_to_pixel(self, x: int, y: int) -> tuple[int, int]:
         return (self._origin_x + x * self._cell,
