@@ -1,7 +1,8 @@
-from ..button import Action, Button
+from ..button import Action
 from ..window import WHITE, YELLOW, Key, Window
+from ...path import ASSET_DIR
 
-BACKGROUND_PATH = "pacman/assets/menu_bg.png"
+BACKGROUND_PATH = ASSET_DIR / "leaderboard_bg.png"
 
 TITLE = "LEADERBOARD"
 TITLE_Y = 0.10
@@ -17,12 +18,14 @@ MAX_ROWS = 10
 class LeaderboardScreen:
     ...
 
-    def __init__(self, window: Window, scores: dict[str, int]):
+    def __init__(self, window: Window, scores: dict[str, int]) -> None:
         self._window = window
         self._background = window.load_image(BACKGROUND_PATH)
-        self._rows = sorted(scores.items(), key=lambda row: row[1], reverse=True)[:MAX_ROWS]
+        self._rows = sorted(scores.items(),
+                            key=lambda row: row[1],
+                            reverse=True)[:MAX_ROWS]
 
-    def update(self, keys: list[Key]):
+    def update(self, keys: list[Key]) -> None | Action:
         for key in keys:
             if key is Key.QUIT:
                 return Action.QUIT
@@ -30,17 +33,16 @@ class LeaderboardScreen:
                 return Action.HOME
         return None
 
-    def draw(self):
+    def draw(self) -> None:
         self._draw_background()
-        self._window.text_centered(TITLE, self._window.ratio_y(TITLE_Y), TITLE_FONT_SIZE, YELLOW)
         self._draw_rows()
 
-    def _draw_background(self):
+    def _draw_background(self) -> None:
         self._window.fill()
         if self._background is not None:
             self._window.blit_centered(self._background)
 
-    def _draw_rows(self):
+    def _draw_rows(self) -> None:
         size = ROW_FONT_SIZE
         y = self._window.ratio_y(FIRST_ROW_Y)
         if not self._rows:
