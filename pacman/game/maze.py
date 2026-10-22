@@ -8,7 +8,6 @@ EAST_BIT = 2
 SOUTH_BIT = 4
 WEST_BIT = 8
 ALL_WALLS = NORTH_BIT | EAST_BIT | SOUTH_BIT | WEST_BIT
-SUPER_PACGUM_COORD = [(0,1),(1,0),(0,0),(1,1)]
 
 
 class Direction(Enum):
@@ -54,6 +53,15 @@ class Cell:
     def is_closed(self) -> bool:
         return self.north and self.east and self.south and self.west
 
+    def has_wall(self, direction: Direction) -> bool:
+        walls = {
+            Direction.UP: self.north,
+            Direction.RIGHT: self.east,
+            Direction.DOWN: self.south,
+            Direction.LEFT: self.west,
+        }
+        return walls[direction]
+
 
 class Map:
 
@@ -62,14 +70,45 @@ class Map:
         self.width: int = len(maze[0])
         self.height: int = len(maze)
         self.cells: list[list[Cell]] = [[Cell.from_value(value) for value in row] for row in maze]
-        self._place_pacgum()
+        self._place_pacgums()
 
-    def _place_pacgum(self):
-        for line in self.cells:
-            for cell in line:
-                cell.pacgum = False if cell.is_closed else True
-        for x, y in SUPER_PACGUM_COORD:
-            self.cells[x][y].pacgum = False
-            self.cells[x][y].super_pacgum = True
+    def corners(self) -> list[tuple[int, int]]:
+        right, bottom = self.width - 1, self.height - 1
+        return [(0, 0), (right, 0), (0, bottom), (right, bottom)]
+
+    def spawn_cell(self) -> tuple[int, int]:
+        cx, cy = self.width // 2, self.height // 2
+        open_cells = []
+        for y in range(self.height):
+            for x in range(self.width):
+                if not self.cells[y][x].is_closed:
+                    open_cells.append((x, y))
+        return min(open_cells, key=lambda pos: (abs(pos[0] - cx) + abs(pos[1] - cy), pos[1], pos[0]))
+
+    def _place_pacgums(self) -> None:
+        for row in self.cells:
+            for cell in row:
+                cell.pacgum = not cell.is_closed
+        for x, y in self.corners():
+            self.cells[y][x].pacgum = False
+            self.cells[y][x].super_pacgum = True
+        sx, sy = self.spawn_cell()
+        self.cells[sy][sx].pacgum = False
+
+    def count_pacgums(self) -> int:
+        return sum(cell.pacgum or cell.super_pacgum
+                   for row in self.cells for cell in row)
+
+    def can_move(self, x: int, y: int, direction: Direction) -> bool:
+        if self.cells[y][x].has_wall(direction):
+            return False
+        nx, ny = x + direction.dx, y + direction.dy
+        return 0 <= nx < self.width and 0 <= ny < self.height
+
+    def can_move(self, x: int, y: int, direction: Direction) -> bool:
+        if self.cells[y][x].has_wall(direction):
+            return False
+        nx, ny = x + direction.dx, y + direction.dy
+        return 0 <= nx < self.width and 0 <= ny < self.height
 
 

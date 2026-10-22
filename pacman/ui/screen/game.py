@@ -1,34 +1,45 @@
+import time
+
 import pygame
 
-from ...game.maze import Map
-from ...game.game import Game
-from ..button import Action
-from ..window import BLACK, Color, Key, Window
 from ...config import Config
-from ...game.entities import Entities
+from ...game.game import Game, Status
+from ...game.maze import Direction
+from ..button import Action
+from ..window import BLACK, WHITE, YELLOW, Color, Key, Window
 
-MAP_WIDTH = 20
-MAP_HEIGHT = 15
-
-HUD_HEIGHT = 0.03
+HUD_HEIGHT = 0.05
+HUD_FONT_SIZE = 36
 MARGIN = 0.03
+MAX_DT = 0.1
 
 WALL_COLOR: Color = (33, 33, 222)
 BLOCK_COLOR: Color = (20, 20, 120)
+GHOST_COLOR: Color = (255, 0, 0)
+FRIGHTENED_COLOR: Color = (60, 60, 255)
 
-GHOST_COORD = [(0, 0), (0, MAP_WIDTH - 1), (MAP_HEIGHT - 1, 0), (MAP_HEIGHT - 1, MAP_WIDTH - 1)]
+KEY_DIRECTIONS: dict[Key, Direction] = {
+    Key.UP: Direction.UP,
+    Key.DOWN: Direction.DOWN,
+    Key.LEFT: Direction.LEFT,
+    Key.RIGHT: Direction.RIGHT,
+}
 
 
 class GameScreen:
 
     def __init__(self, window: Window, config: Config) -> None:
         self._window = window
-        self._config = config
-        self._map = Map(MAP_WIDTH, MAP_HEIGHT, self._config.seed)
-        self._game = Game(self._map, self._config)
+        self._game = Game(config)
+        self._last_time = time.monotonic()
+        self._load_level()
+
+    def _load_level(self) -> None:
+        self._level = self._game.level
+        self._map = self._game.map
         self._compute_layout()
         self._walls = self._build_walls()
-        self._ghosts = [Entities(x, y) for x, y in GHOST_COORD]
+        self._build_images()
 
     def _compute_layout(self) -> None:
         window = self._window
@@ -53,7 +64,7 @@ class GameScreen:
         for y, row in enumerate(self._map.cells):
             for x, cell in enumerate(row):
                 px, py = self.cell_to_pixel(x, y)
-                if cell.north and cell.east and cell.south and cell.west:
+                if cell.is_closed:
                     walls.append((block, px, py))
                 if cell.north:
                     walls.append((h_wall, px, py))
@@ -65,14 +76,23 @@ class GameScreen:
                     walls.append((v_wall, px + size, py))
         return walls
 
-    def _draw_entities(self) -> list[Entities]:
-        for ghost in self.ghosts: 
-            ...
-
+    def _build_images(self) -> None:
+        cell = self._cell
+        self._pacgum_size = max(cell // 6, 2)
+        self._super_size = max(cell // 3, 4)
+        self._entity_size = cell // 2
+        new = self._window.new_image
+        self._pacgum_img = new(self._pacgum_size, self._pacgum_size, WHITE)
+        self._super_img = new(self._super_size, self._super_size, WHITE)
+        size = self._entity_size
+        self._pacman_img = new(size, size, YELLOW)
+        self._ghost_img = new(size, size, GHOST_COLOR)
+        self._frightened_img = new(size, size, FRIGHTENED_COLOR)
 
     def cell_to_pixel(self, x: int, y: int) -> tuple[int, int]:
         return (self._origin_x + x * self._cell,
                 self._origin_y + y * self._cell)
+
 
     def update(self, keys: list[Key]) -> Action | None:
         for key in keys:
@@ -80,9 +100,48 @@ class GameScreen:
                 return Action.QUIT
             if key is Key.ESCAPE:
                 return Action.HOME
+            if key in KEY_DIRECTIONS:
+                self._game.set_direction(KEY_DIRECTIONS[key])
+
+        now = time.monotonic()
+        dt = min(now - self._last_time, MAX_DT)
+        self._last_time = now
+        self._game.update(dt)
+
+        if self._game.status is not Status.PLAYING:
+            return Action.HOME
+        if self._game.level != self._level:
+            self._load_level()
         return None
+
 
     def draw(self) -> None:
         self._window.fill(BLACK)
         for image, x, y in self._walls:
             self._window.blit(image, x, y)
+        self._draw_pacgums()
+        self._draw_ghosts()
+        px, py = self._game.pacman.position
+        self._draw_centered(self._pacman_img, self._entity_size, px, py)
+
+    def _draw_pacgums(self) -> None:
+        for y, row in enumerate(self._map.cells):
+            for x, cell in enumerate(row):
+                if cell.pacgum:
+                    self._draw_centered(self._pacgum_img, self._pacgum_size, x, y)
+                elif cell.super_pacgum:
+                    self._draw_centered(self._super_img, self._super_size, x, y)
+
+    def _draw_ghosts(self) -> None:
+        frightened = self._game.frightened_time > 0
+        image = self._frightened_img if frightened else self._ghost_img
+        for ghost in self._game.ghosts:
+            if ghost.is_active:
+                gx, gy = ghost.position
+                self._draw_centered(image, self._entity_size, gx, gy)
+
+    def _draw_centered(self, image: pygame.Surface, size: int,x: float, y: float) -> None:
+        offset = (self._cell - size) // 2
+        px = self._origin_x + x * self._cell + offset
+        py = self._origin_y + y * self._cell + offset
+        self._window.blit(image, int(px), int(py))
