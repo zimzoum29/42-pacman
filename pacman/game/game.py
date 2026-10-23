@@ -32,7 +32,7 @@ class Game:
         self.score = 0
         self.lives = config.lives
         self.status = Status.PLAYING
-        self.new_mode: GhostMode | None = GhostMode.SCATTER
+        self.new_mode: GhostMode | None = GhostMode.CHASE
         self.frightened_time = 0.0
         self.fast = False
         self._rng = random.Random()
@@ -74,7 +74,6 @@ class Game:
             self._start_level(self.level + 1)
 
     def set_direction(self, direction: Direction) -> None:
-        """The player wants to go this way (applied as soon as possible)."""
         self.pacman.wanted = direction
 
     def update(self, dt: float) -> None:
