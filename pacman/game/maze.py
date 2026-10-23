@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-
+from functools import cached_property
 from mazegenerator import MazeGenerator
 
 NORTH_BIT = 1
@@ -37,7 +37,7 @@ class Cell:
     east: bool
     south: bool
     west: bool
-    pacgum: bool = False 
+    pacgum: bool = False
     super_pacgum: bool = False
 
     @classmethod
@@ -49,9 +49,17 @@ class Cell:
             west=bool(value & WEST_BIT),
         )
 
-    @property
+    @cached_property
     def is_closed(self) -> bool:
         return self.north and self.east and self.south and self.west
+
+    @cached_property
+    def is_intersection(self) -> bool:
+        return (not self.north or not self.south) and (not self.east or not self.west)
+
+    @cached_property
+    def is_dead_end(self) -> bool:
+        return True if sum([self.north, self.east, self.south, self.west]) == 3 else False
 
     def has_wall(self, direction: Direction) -> bool:
         walls = {
@@ -103,12 +111,4 @@ class Map:
         if self.cells[y][x].has_wall(direction):
             return False
         nx, ny = x + direction.dx, y + direction.dy
-        return 0 <= nx < self.width and 0 <= ny < self.height
-
-    def can_move(self, x: int, y: int, direction: Direction) -> bool:
-        if self.cells[y][x].has_wall(direction):
-            return False
-        nx, ny = x + direction.dx, y + direction.dy
-        return 0 <= nx < self.width and 0 <= ny < self.height
-
-
+        return 0 <= nx < self.width and 0 <= ny < self.height# Pourquoi faire ? Remplacer par un return True

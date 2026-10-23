@@ -2,7 +2,7 @@ import random
 from enum import Enum, auto
 
 from ..config import Config
-from .entities import Ghost, Pacman
+from .entities import Ghost, Blinky, Inky, Pinky, Clyde, GhostMode, Pacman
 from .maze import Direction, Map
 
 MAP_WIDTH = 20
@@ -32,6 +32,7 @@ class Game:
         self.score = 0
         self.lives = config.lives
         self.status = Status.PLAYING
+        self.new_mode: GhostMode | None = GhostMode.SCATTER
         self.frightened_time = 0.0
         self.fast = False
         self._rng = random.Random()
@@ -42,12 +43,29 @@ class Game:
         seed = self.config.seed if level == 1 else RANDOM_SEED
         self.map = Map(MAP_WIDTH, MAP_HEIGHT, seed)
         self.spawn = self.map.spawn_cell()
-        self.pacman = Pacman(*self.spawn, PACMAN_SPEED)
-        self.ghosts = [Ghost(x, y, GHOST_SPEED, self._rng)
-                       for x, y in self.map.corners()]
+        self._init_entities()
         self.pacgums_left = self.map.count_pacgums()
         self.time_left = float(self.config.level_max_time)
         self.frightened_time = 0.0
+
+    def _init_entities(self) -> None:
+        self.pacman = Pacman(*self.spawn, PACMAN_SPEED)
+
+        self.pinky = Pinky(*self.map.corners()[0], GHOST_SPEED,
+                           self._rng, self.pacman)
+        self.blinky = Blinky(*self.map.corners()[1], GHOST_SPEED,
+                             self._rng, self.pacman)
+        self.clyde = Clyde(*self.map.corners()[2], GHOST_SPEED,
+                           self._rng, self.pacman)
+        self.inky = Inky(*self.map.corners()[3], GHOST_SPEED,
+                         self._rng, self.pacman, self.blinky)
+
+        self.ghosts = [
+            self.pinky,
+            self.blinky,
+            self.clyde,
+            self.inky
+        ]
 
     def _next_level(self) -> None:
         if self.level >= LEVEL_COUNT:
@@ -68,6 +86,8 @@ class Game:
         if self.level != level or self.status is not Status.PLAYING:
             return
         self._move_ghosts(dt)
+        if self.new_mode:
+            self.new_mode = None
         self._check_collisions()
         self._update_timers(dt)
 
@@ -91,13 +111,14 @@ class Game:
             self.score += self.config.points_per_super_pacgum
             self.pacgums_left -= 1
             self.frightened_time = FRIGHTENED_DURATION
+            self.new_mode = GhostMode.FRIGHTENED
         if self.pacgums_left == 0:
             self._next_level()
 
     def _move_ghosts(self, dt: float) -> None:
         for ghost in self.ghosts:
             if ghost.is_active:
-                ghost.update(dt, self.map)
+                ghost.update(dt, self.map, self.new_mode)
 
     def _check_collisions(self) -> None:
         px, py = self.pacman.position
