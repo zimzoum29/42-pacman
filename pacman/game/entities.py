@@ -97,8 +97,8 @@ class Ghost(Entity, ABC):
         super().__init__(x, y, speed)
         self.home = (x, y)
         self.color = color
-        self.mode = GhostMode.SCATTER
-        self.direction_function: Callable = self._scatter
+        self.mode = GhostMode.CHASE
+        self.direction_function: Callable = self._chase
         self.before_frightened: Optional[GhostMode] = None
         self.respawn_time = 0.0
         self._rng = rng
@@ -158,10 +158,7 @@ class Ghost(Entity, ABC):
             options = [d for d in Direction if maze.can_move(self.x, self.y, d)
                        and d is not self.direction.opposite]
 
-            distances = [self._distance((self.position[0] + option.dx,
-                                         self.position[1] + option.dy),
-                                        position)
-                         for option in options]
+            distances = [self._distance((self.position[0] + option.dx, self.position[1] + option.dy), position) for option in options]
 
             self.direction = options[distances.index(min(distances))]
 
