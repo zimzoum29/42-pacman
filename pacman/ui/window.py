@@ -9,8 +9,12 @@ Color = tuple[int, int, int]
 BLACK: Color = (0, 0, 0)
 WHITE: Color = (255, 255, 255)
 YELLOW: Color = (255, 210, 0)
+CYAN: Color = (0, 255, 255)
 BLUE: Color = (0, 0, 255)
 DARK_BLUE: Color = (10, 10, 90)
+RED: Color = (255, 0, 0)
+PINK: Color = (255, 128, 233)
+ORANGE: Color = (255, 128, 0)
 
 SCREEN_MARGIN = 80
 MIN_HEIGHT = 480
@@ -29,6 +33,7 @@ class Key(Enum):
     ENTER = auto()
     ESCAPE = auto()
     QUIT = auto()
+    N = auto()
 
 
 _KEY_MAP: dict[int, Key] = {
@@ -38,7 +43,9 @@ _KEY_MAP: dict[int, Key] = {
     pygame.K_RIGHT: Key.RIGHT,
     pygame.K_RETURN: Key.ENTER,
     pygame.K_ESCAPE: Key.ESCAPE,
+    pygame.K_n: Key.N
 }
+
 
 class Window:
 

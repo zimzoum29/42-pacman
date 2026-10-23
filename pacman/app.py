@@ -67,18 +67,18 @@ def main(argv: list[str]) -> int:
         return 1
 
     window: Optional[Window] = None
-    try:
-        window = Window()
-        App(window, config, highscores).run()
-    except WindowError as e:
-        print(f"[ERROR] {e}", file=sys.stderr)
-        return 1
-    except KeyboardInterrupt:
-        print("\ninterrupted")
-    except Exception as e:
-        print(f"[ERROR] unexpected error: {e!r}", file=sys.stderr)
-        return 1
-    finally:
-        if window is not None:
-            window.close()
+    # try:
+    window = Window()
+    App(window, config, highscores).run()
+    # except WindowError as e:
+    #     print(f"[ERROR] {e}", file=sys.stderr)
+    #     return 1
+    # except KeyboardInterrupt:
+    #     print("\ninterrupted")
+    # except Exception as e:
+    #     print(f"[ERROR] unexpected error: {e!r}", file=sys.stderr)
+    #     return 1
+    # finally:
+    #     if window is not None:
+    #         window.close()
     return 0

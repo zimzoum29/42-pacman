@@ -93,7 +93,6 @@ class GameScreen:
         return (self._origin_x + x * self._cell,
                 self._origin_y + y * self._cell)
 
-
     def update(self, keys: list[Key]) -> Action | None:
         for key in keys:
             if key is Key.QUIT:
@@ -113,7 +112,6 @@ class GameScreen:
         if self._game.level != self._level:
             self._load_level()
         return None
-
 
     def draw(self) -> None:
         self._window.fill(BLACK)
