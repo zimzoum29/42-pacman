@@ -37,6 +37,9 @@ class Game:
         self.fast = False
         self._rng = random.Random()
         self._start_level(1)
+        self.fast = False
+        self.invincible = False
+        self.ghosts_frozen = False
 
     def _start_level(self, level: int) -> None:
         self.level = level
@@ -87,6 +90,10 @@ class Game:
         self._move_ghosts(dt)
         if self.new_mode:
             self.new_mode = None
+        self._check_collisions()
+        self._update_timers(dt)
+        self._update_ghost_modes()
+        self._move_ghosts(dt)
         self._check_collisions()
         self._update_timers(dt)
 
@@ -155,3 +162,20 @@ class Game:
         self.pacman.place(*self.spawn)
         for ghost in self.ghosts:
             ghost.go_home()
+
+    def _ghost_mode(self) -> GhostMode:
+        if self.frightened_time > 0:
+            return GhostMode.FRIGHTENED
+        return GhostMode.CHASE
+
+    def _update_ghost_modes(self) -> None:
+        mode = self._ghost_mode()
+        for ghost in self.ghosts:
+            ghost.set_mode(mode)
+
+    def _move_ghosts(self, dt: float) -> None:
+        if self.ghosts_frozen:
+            return
+        for ghost in self.ghosts:
+            if ghost.is_active:
+                ghost.update(dt, self.map)

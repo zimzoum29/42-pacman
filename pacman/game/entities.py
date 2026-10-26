@@ -5,7 +5,6 @@ from enum import Enum, auto
 from abc import ABC, abstractmethod
 
 from .maze import Direction, Map
-from ..ui.window import Color, RED, CYAN, PINK, ORANGE
 
 
 class Entity(ABC):
@@ -92,14 +91,11 @@ class Ghost(Entity, ABC):
                  speed: float,
                  rng: random.Random,
                  pacman: Pacman,
-                 color: Color
                  ) -> None:
         super().__init__(x, y, speed)
         self.home = (x, y)
-        self.color = color
         self.mode = GhostMode.CHASE
         self.direction_function: Callable = self._chase
-        self.before_frightened: Optional[GhostMode] = None
         self.respawn_time = 0.0
         self._rng = rng
         self.pacman = pacman
@@ -111,22 +107,25 @@ class Ghost(Entity, ABC):
     def go_home(self) -> None:
         self.place(*self.home)
 
-    def update(self, dt: float, maze: Map, new_mode: Optional[GhostMode] = None) -> list[tuple[int, int]]:
-        if new_mode:
-            if new_mode is GhostMode.FRIGHTENED:
-                self.before_frightened = self.mode
-                if self.direction:
-                    self.direction = self.direction.opposite
+    def set_mode(self, mode: GhostMode) -> None:
+        if mode is self.mode:
+            return
+        if mode is GhostMode.FRIGHTENED:
+            self._turn_back()
+        self.mode = mode
+        self.direction_function = {
+            GhostMode.CHASE: self._chase,
+            GhostMode.SCATTER: self._scatter,
+            GhostMode.FRIGHTENED: self._frightened,
+        }[mode]
 
-            self.mode = new_mode
-            match self.mode:
-                case GhostMode.SCATTER:
-                    self.direction_function = self._scatter
-                case GhostMode.CHASE:
-                    self.direction_function = self._chase
-                case GhostMode.FRIGHTENED:
-                    self.direction_function = self._frightened
-        return super().update(dt, maze)
+    def _turn_back(self) -> None:
+        if self.direction is None or self.progress == 0.0:
+            return
+        self.x += self.direction.dx
+        self.y += self.direction.dy
+        self.progress = 1.0 - self.progress
+        self.direction = self.direction.opposite
 
     def _choose_direction(self, maze: Map) -> None:
         if self.direction is None:
@@ -179,7 +178,7 @@ class Blinky(Ghost):
                  rng: random.Random,
                  pacman: Pacman
                  ) -> None:
-        super().__init__(x, y, speed, rng, pacman, RED)
+        super().__init__(x, y, speed, rng, pacman)
 
     def _chase(self, maze: Map) -> None:
         self._head_towards_position(maze, self.pacman.position)
@@ -194,7 +193,7 @@ class Pinky(Ghost):
                  rng: random.Random,
                  pacman: Pacman
                  ) -> None:
-        super().__init__(x, y, speed, rng, pacman, PINK)
+        super().__init__(x, y, speed, rng, pacman)
 
     def _chase(self, maze: Map) -> None:
         self._head_towards_position(
@@ -227,7 +226,7 @@ class Inky(Ghost):
                  blinky: Blinky
                  ) -> None:
         self.blinky = blinky
-        super().__init__(x, y, speed, rng, pacman, CYAN)
+        super().__init__(x, y, speed, rng, pacman)
 
     def _chase(self, maze: Map) -> None:
         plus_two = self._two_tiles_ahead_pacman(self.pacman)
@@ -261,7 +260,7 @@ class Clyde(Ghost):
                  rng: random.Random,
                  pacman: Pacman
                  ) -> None:
-        super().__init__(x, y, speed, rng, pacman, ORANGE)
+        super().__init__(x, y, speed, rng, pacman)
 
     def _chase(self, maze: Map) -> None:
         if self._distance(self.position, self.pacman.position) > 8.0:

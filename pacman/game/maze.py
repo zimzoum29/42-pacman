@@ -26,7 +26,7 @@ class Direction(Enum):
         return self.value[1]
 
     @property
-    def opposite(self) -> Direction:
+    def opposite(self) -> "Direction":
         return Direction((-self.dx, -self.dy))
 
 
@@ -41,7 +41,7 @@ class Cell:
     super_pacgum: bool = False
 
     @classmethod
-    def from_value(cls, value: int) -> Cell:
+    def from_value(cls, value: int) -> "Cell":
         return cls(
             north=bool(value & NORTH_BIT),
             east=bool(value & EAST_BIT),
