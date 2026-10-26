@@ -32,7 +32,7 @@ class Game:
         self.score = 0
         self.lives = config.lives
         self.status = Status.PLAYING
-        self.new_mode: GhostMode | None = GhostMode.CHASE
+        self.new_mode: GhostMode | None = GhostMode.FRIGHTENED
         self.frightened_time = 0.0
         self.fast = False
         self._rng = random.Random()
@@ -93,9 +93,6 @@ class Game:
         self._check_collisions()
         self._update_timers(dt)
         self._update_ghost_modes()
-        self._move_ghosts(dt)
-        self._check_collisions()
-        self._update_timers(dt)
 
     def _move_pacman(self, dt: float) -> None:
         factor = FAST_FACTOR if self.fast else 1.0
