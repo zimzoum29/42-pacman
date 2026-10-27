@@ -7,6 +7,7 @@ from ...game.game import Game, Status
 from ...game.maze import Direction
 from ..button import Action
 from ..window import BLACK, WHITE, YELLOW, Color, Key, Window
+from ...path import ASSET_DIR
 
 HUD_HEIGHT = 0.05
 HUD_FONT_SIZE = 36
@@ -25,6 +26,21 @@ KEY_DIRECTIONS: dict[Key, Direction] = {
     Key.RIGHT: Direction.RIGHT,
 }
 
+CELL_SIZE = 60
+WALL_THICKNESS = 8
+FLOOR_PATH = ASSET_DIR / "floor.png"
+WALL_H_PATH = ASSET_DIR / "wall_h.png"
+WALL_V_PATH = ASSET_DIR / "wall_v.png"
+BLOCK_PATH = ASSET_DIR / "block.png"
+
+DIRECTION_NAMES: dict[Direction, str] = {
+    Direction.UP: "up",
+    Direction.DOWN: "down",
+    Direction.LEFT: "left",
+    Direction.RIGHT: "right",
+}
+ARROW_GAP = 2       # pixels between Pac-Man and the arrow
+
 
 class GameScreen:
 
@@ -32,12 +48,25 @@ class GameScreen:
         self._window = window
         self._game = Game(config)
         self._last_time = time.monotonic()
+        self._floor_img = window.load_image(FLOOR_PATH)
+        self._wall_h_img = window.load_image(WALL_H_PATH)
+        self._wall_v_img = window.load_image(WALL_V_PATH)
+        self._block_img = window.load_image(BLOCK_PATH)
+        self._pacman_imgs = {
+            d: window.load_image(ASSET_DIR / f"pacman_{name}.png")
+            for d, name in DIRECTION_NAMES.items()
+        }
+        self._arrow_imgs = {
+            d: window.load_image(ASSET_DIR / f"arrow_{name}.png")
+            for d, name in DIRECTION_NAMES.items()
+        }
         self._load_level()
 
     def _load_level(self) -> None:
         self._level = self._game.level
         self._map = self._game.map
         self._compute_layout()
+        self._floors = self._build_floors()
         self._walls = self._build_walls()
         self._build_images()
 
@@ -53,28 +82,34 @@ class GameScreen:
         map_h = self._cell * self._map.height
         self._origin_x = (window.width - map_w) // 2
         self._origin_y = top + (free_h - map_h) // 2
+        self._cell = CELL_SIZE
+        self._thick = WALL_THICKNESS
 
     def _build_walls(self) -> list[tuple[pygame.Surface, int, int]]:
-        size, thick = self._cell, self._thick
-        h_wall = self._window.new_image(size + thick, thick, WALL_COLOR)
-        v_wall = self._window.new_image(thick, size + thick, WALL_COLOR)
-        block = self._window.new_image(size, size, BLOCK_COLOR)
+        size = self._cell
+        half = self._thick // 2
+        h_wall, v_wall = self._wall_h_img, self._wall_v_img
 
         walls: list[tuple[pygame.Surface, int, int]] = []
+        blocks: list[tuple[pygame.Surface, int, int]] = []
         for y, row in enumerate(self._map.cells):
             for x, cell in enumerate(row):
                 px, py = self.cell_to_pixel(x, y)
                 if cell.is_closed:
-                    walls.append((block, px, py))
-                if cell.north:
-                    walls.append((h_wall, px, py))
-                if cell.west:
-                    walls.append((v_wall, px, py))
-                if cell.south and y == self._map.height - 1:
-                    walls.append((h_wall, px, py + size))
-                if cell.east and x == self._map.width - 1:
-                    walls.append((v_wall, px + size, py))
-        return walls
+                    if self._block_img is not None:
+                        blocks.append((self._block_img, px, py))
+                    continue
+                if h_wall is not None:
+                    if cell.north:
+                        walls.append((h_wall, px - half, py - half))
+                    if cell.south:
+                        walls.append((h_wall, px - half, py + size - half))
+                if v_wall is not None:
+                    if cell.west:
+                        walls.append((v_wall, px - half, py - half))
+                    if cell.east:
+                        walls.append((v_wall, px + size - half, py - half))
+        return walls + blocks
 
     def _build_images(self) -> None:
         cell = self._cell
@@ -85,7 +120,6 @@ class GameScreen:
         self._pacgum_img = new(self._pacgum_size, self._pacgum_size, WHITE)
         self._super_img = new(self._super_size, self._super_size, WHITE)
         size = self._entity_size
-        self._pacman_img = new(size, size, YELLOW)
         self._ghost_img = new(size, size, GHOST_COLOR)
         self._frightened_img = new(size, size, FRIGHTENED_COLOR)
 
@@ -115,12 +149,14 @@ class GameScreen:
 
     def draw(self) -> None:
         self._window.fill(BLACK)
+        if self._floor_img is not None:
+            for x, y in self._floors:
+                self._window.blit(self._floor_img, x, y)
         for image, x, y in self._walls:
             self._window.blit(image, x, y)
         self._draw_pacgums()
         self._draw_ghosts()
-        px, py = self._game.pacman.position
-        self._draw_centered(self._pacman_img, self._entity_size, px, py)
+        self._draw_pacman()
 
     def _draw_pacgums(self) -> None:
         for y, row in enumerate(self._map.cells):
@@ -143,3 +179,37 @@ class GameScreen:
         px = self._origin_x + x * self._cell + offset
         py = self._origin_y + y * self._cell + offset
         self._window.blit(image, int(px), int(py))
+
+    def _build_floors(self) -> list[tuple[int, int]]:
+        floors: list[tuple[int, int]] = []
+        for y, row in enumerate(self._map.cells):
+            for x, cell in enumerate(row):
+                if not cell.is_closed:
+                    floors.append(self.cell_to_pixel(x, y))
+        return floors
+
+    def _draw_pacman(self) -> None:
+        pacman = self._game.pacman
+        facing = pacman.direction or pacman.last_direction
+        cx, cy = self._cell_center(*pacman.position)
+
+        sprite = self._pacman_imgs[facing]
+        if sprite is not None:
+            self._blit_center(sprite, cx, cy)
+
+        wanted = pacman.wanted or facing
+        arrow = self._arrow_imgs[wanted]
+        if arrow is None:
+            return
+        reach_x = (sprite.get_width() if sprite else 0) // 2
+        reach_y = (sprite.get_height() if sprite else 0) // 2
+        dist_x = reach_x + arrow.get_width() // 2 + ARROW_GAP
+        dist_y = reach_y + arrow.get_height() // 2 + ARROW_GAP
+        self._blit_center(arrow, cx + wanted.dx * dist_x, cy + wanted.dy * dist_y)
+
+    def _cell_center(self, x: float, y: float) -> tuple[float, float]:
+        return (self._origin_x + (x + 0.5) * self._cell,
+                self._origin_y + (y + 0.5) * self._cell)
+
+    def _blit_center(self, image: pygame.Surface, cx: float, cy: float) -> None:
+        self._window.blit(image, int(cx - image.get_width() / 2), int(cy - image.get_height() / 2))
