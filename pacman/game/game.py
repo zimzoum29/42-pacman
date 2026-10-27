@@ -41,6 +41,12 @@ class Game:
         self.invincible = False
         self.ghosts_frozen = False
 
+    def _init_cheat_variables(self) -> None:
+        self._player_immortality: bool = False
+
+    def set_player_immortality(self, value: bool) -> None:
+        self._player_immortality = value
+
     def _start_level(self, level: int) -> None:
         self.level = level
         seed = self.config.seed if level == 1 else RANDOM_SEED
