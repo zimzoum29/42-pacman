@@ -14,9 +14,11 @@ PACMAN_SPEED = 6.0
 GHOST_SPEED = 4.0
 FAST_FACTOR = 2.0
 
+CHASE_DURATION = 10.0
+SCATTER_DURATION = 5.0
 FRIGHTENED_DURATION = 8.0
 GHOST_RESPAWN_DELAY = 5.0
-HIT_DISTANCE = 0.5
+HIT_DISTANCE = 0.42
 
 
 class Status(Enum):
@@ -32,20 +34,17 @@ class Game:
         self.score = 0
         self.lives = config.lives
         self.status = Status.PLAYING
-        self.new_mode: GhostMode | None = GhostMode.FRIGHTENED
-        self.frightened_time = 0.0
-        self.fast = False
+        self.frightened_time = FRIGHTENED_DURATION
+        self.current_mode = GhostMode.CHASE
+        self.mode_timer = CHASE_DURATION
         self._rng = random.Random()
         self._start_level(1)
-        self.fast = False
-        self.invincible = False
-        self.ghosts_frozen = False
+        self._init_cheat_variables()
 
     def _init_cheat_variables(self) -> None:
-        self._player_immortality: bool = False
-
-    def set_player_immortality(self, value: bool) -> None:
-        self._player_immortality = value
+        self.player_immortality: bool = False
+        self.ghosts_frozen = False
+        self.fast = False
 
     def _start_level(self, level: int) -> None:
         self.level = level
@@ -60,20 +59,20 @@ class Game:
     def _init_entities(self) -> None:
         self.pacman = Pacman(*self.spawn, PACMAN_SPEED)
 
-        self.pinky = Pinky(*self.map.corners()[0], GHOST_SPEED,
-                           self._rng, self.pacman)
-        self.blinky = Blinky(*self.map.corners()[1], GHOST_SPEED,
-                             self._rng, self.pacman)
-        self.clyde = Clyde(*self.map.corners()[2], GHOST_SPEED,
-                           self._rng, self.pacman)
-        self.inky = Inky(*self.map.corners()[3], GHOST_SPEED,
-                         self._rng, self.pacman, self.blinky)
+        pinky = Pinky(*self.map.corners()[0], GHOST_SPEED,
+                      self._rng, self.pacman)
+        blinky = Blinky(*self.map.corners()[1], GHOST_SPEED,
+                        self._rng, self.pacman)
+        clyde = Clyde(*self.map.corners()[2], GHOST_SPEED,
+                      self._rng, self.pacman)
+        inky = Inky(*self.map.corners()[3], GHOST_SPEED,
+                    self._rng, self.pacman, blinky)
 
-        self.ghosts = [
-            self.pinky,
-            self.blinky,
-            self.clyde,
-            self.inky
+        self.ghosts: list[Ghost] = [
+            pinky,
+            blinky,
+            clyde,
+            inky
         ]
 
     def _next_level(self) -> None:
@@ -90,15 +89,13 @@ class Game:
             return
         level = self.level
 
+        self._check_collisions()
         self._move_pacman(dt)
         if self.level != level or self.status is not Status.PLAYING:
             return
-        self._move_ghosts(dt)
-        if self.new_mode:
-            self.new_mode = None
-        self._check_collisions()
         self._update_timers(dt)
         self._update_ghost_modes()
+        self._move_ghosts(dt)
 
     def _move_pacman(self, dt: float) -> None:
         factor = FAST_FACTOR if self.fast else 1.0
@@ -120,11 +117,12 @@ class Game:
             self.score += self.config.points_per_super_pacgum
             self.pacgums_left -= 1
             self.frightened_time = FRIGHTENED_DURATION
-            self.new_mode = GhostMode.FRIGHTENED
         if self.pacgums_left == 0:
             self._next_level()
 
     def _check_collisions(self) -> None:
+        if self.player_immortality is True and self.frightened_time == 0.0:
+            return
         px, py = self.pacman.position
         for ghost in self.ghosts:
             if not ghost.is_active:
@@ -143,7 +141,10 @@ class Game:
         ghost.respawn_time = GHOST_RESPAWN_DELAY
 
     def _update_timers(self, dt: float) -> None:
-        self.frightened_time = max(0.0, self.frightened_time - dt)
+        if self.frightened_time > 0.0:
+            self.frightened_time = max(0.0, self.frightened_time - dt)
+        else:
+            self.mode_timer = max(0.0, self.mode_timer - dt)
         for ghost in self.ghosts:
             if not ghost.is_active:
                 ghost.respawn_time = max(0.0, ghost.respawn_time - dt)
@@ -161,13 +162,25 @@ class Game:
         for ghost in self.ghosts:
             ghost.go_home()
 
-    def _ghost_mode(self) -> GhostMode:
-        if self.frightened_time > 0:
-            return GhostMode.FRIGHTENED
-        return GhostMode.CHASE
+    def _switch_mode(self) -> GhostMode:
+        match self.current_mode:
+            case GhostMode.CHASE:
+                self.current_mode = GhostMode.SCATTER
+                self.mode_timer = SCATTER_DURATION
+                return GhostMode.SCATTER
+            case _:
+                self.current_mode = GhostMode.CHASE
+                self.mode_timer = CHASE_DURATION
+                return GhostMode.CHASE
 
     def _update_ghost_modes(self) -> None:
-        mode = self._ghost_mode()
+        if self.frightened_time > 0:
+            mode = GhostMode.FRIGHTENED
+        elif self.mode_timer == 0.0:
+            mode = self._switch_mode()
+        else:
+            mode = self.current_mode
+
         for ghost in self.ghosts:
             ghost.set_mode(mode)
 
