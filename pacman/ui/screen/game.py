@@ -33,6 +33,14 @@ WALL_H_PATH = ASSET_DIR / "wall_h.png"
 WALL_V_PATH = ASSET_DIR / "wall_v.png"
 BLOCK_PATH = ASSET_DIR / "block.png"
 
+DIRECTION_NAMES: dict[Direction, str] = {
+    Direction.UP: "up",
+    Direction.DOWN: "down",
+    Direction.LEFT: "left",
+    Direction.RIGHT: "right",
+}
+ARROW_GAP = 2       # pixels between Pac-Man and the arrow
+
 
 class GameScreen:
 
@@ -44,6 +52,14 @@ class GameScreen:
         self._wall_h_img = window.load_image(WALL_H_PATH)
         self._wall_v_img = window.load_image(WALL_V_PATH)
         self._block_img = window.load_image(BLOCK_PATH)
+        self._pacman_imgs = {
+            d: window.load_image(ASSET_DIR / f"pacman_{name}.png")
+            for d, name in DIRECTION_NAMES.items()
+        }
+        self._arrow_imgs = {
+            d: window.load_image(ASSET_DIR / f"arrow_{name}.png")
+            for d, name in DIRECTION_NAMES.items()
+        }
         self._load_level()
 
     def _load_level(self) -> None:
@@ -73,27 +89,27 @@ class GameScreen:
         size = self._cell
         half = self._thick // 2
         h_wall, v_wall = self._wall_h_img, self._wall_v_img
-        last_x, last_y = self._map.width - 1, self._map.height - 1
 
         walls: list[tuple[pygame.Surface, int, int]] = []
+        blocks: list[tuple[pygame.Surface, int, int]] = []
         for y, row in enumerate(self._map.cells):
             for x, cell in enumerate(row):
                 px, py = self.cell_to_pixel(x, y)
-                if cell.is_closed and self._block_img is not None:
-                    walls.append((self._block_img, px, py))
-                else:
-                    if h_wall is not None:
-                        if not cell.north or self._map.cells[y - 1][x].is_closed:
-                            walls.append((h_wall, px - half, py - half))
-                        if (cell.south and y == last_y) or (y + 1 < last_y and self._map.cells[y + 1][x].is_closed):
-                            walls.append((h_wall, px - half, py + size - half))
-                    if v_wall is not None:
-                        if cell.west or self._map.cells[y][x - 1].is_closed:
-                            walls.append((v_wall, px - half, py - half))
-                        if (cell.east and x == last_x) or (x + 1 < last_x and self._map.cells[y][x + 1].is_closed):
-                            walls.append((v_wall, px + size - half, py - half))
-
-        return walls
+                if cell.is_closed:
+                    if self._block_img is not None:
+                        blocks.append((self._block_img, px, py))
+                    continue
+                if h_wall is not None:
+                    if cell.north:
+                        walls.append((h_wall, px - half, py - half))
+                    if cell.south:
+                        walls.append((h_wall, px - half, py + size - half))
+                if v_wall is not None:
+                    if cell.west:
+                        walls.append((v_wall, px - half, py - half))
+                    if cell.east:
+                        walls.append((v_wall, px + size - half, py - half))
+        return walls + blocks
 
     def _build_images(self) -> None:
         cell = self._cell
@@ -104,7 +120,6 @@ class GameScreen:
         self._pacgum_img = new(self._pacgum_size, self._pacgum_size, WHITE)
         self._super_img = new(self._super_size, self._super_size, WHITE)
         size = self._entity_size
-        self._pacman_img = new(size, size, YELLOW)
         self._ghost_img = new(size, size, GHOST_COLOR)
         self._frightened_img = new(size, size, FRIGHTENED_COLOR)
 
@@ -141,8 +156,7 @@ class GameScreen:
             self._window.blit(image, x, y)
         self._draw_pacgums()
         self._draw_ghosts()
-        px, py = self._game.pacman.position
-        self._draw_centered(self._pacman_img, self._entity_size, px, py)
+        self._draw_pacman()
 
     def _draw_pacgums(self) -> None:
         for y, row in enumerate(self._map.cells):
@@ -173,3 +187,29 @@ class GameScreen:
                 if not cell.is_closed:
                     floors.append(self.cell_to_pixel(x, y))
         return floors
+
+    def _draw_pacman(self) -> None:
+        pacman = self._game.pacman
+        facing = pacman.direction or pacman.last_direction
+        cx, cy = self._cell_center(*pacman.position)
+
+        sprite = self._pacman_imgs[facing]
+        if sprite is not None:
+            self._blit_center(sprite, cx, cy)
+
+        wanted = pacman.wanted or facing
+        arrow = self._arrow_imgs[wanted]
+        if arrow is None:
+            return
+        reach_x = (sprite.get_width() if sprite else 0) // 2
+        reach_y = (sprite.get_height() if sprite else 0) // 2
+        dist_x = reach_x + arrow.get_width() // 2 + ARROW_GAP
+        dist_y = reach_y + arrow.get_height() // 2 + ARROW_GAP
+        self._blit_center(arrow, cx + wanted.dx * dist_x, cy + wanted.dy * dist_y)
+
+    def _cell_center(self, x: float, y: float) -> tuple[float, float]:
+        return (self._origin_x + (x + 0.5) * self._cell,
+                self._origin_y + (y + 0.5) * self._cell)
+
+    def _blit_center(self, image: pygame.Surface, cx: float, cy: float) -> None:
+        self._window.blit(image, int(cx - image.get_width() / 2), int(cy - image.get_height() / 2))
