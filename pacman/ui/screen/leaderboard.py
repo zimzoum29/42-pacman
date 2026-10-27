@@ -1,7 +1,7 @@
 import pygame
 
 from ..button import Action
-from ..window import BLACK, YELLOW, BLUE, DARK_BLUE, Key, Window
+from ..window import TRANSPARENT, BLACK, YELLOW, BLUE, DARK_BLUE, Key, Window
 from ...path import ASSET_DIR
 
 BACKGROUND_PATH = ASSET_DIR / "leaderboard_bg.png"
@@ -107,7 +107,7 @@ class LeaderboardScreen:
         score_rect_w = 260
 
         # 1. Créer une image vierge de la taille d'une ligne (équivalent mlx.new_image)
-        bg_img = self._window.new_image(rect_w, rect_h, BLACK)
+        bg_img = self._window.new_image(rect_w, rect_h, TRANSPARENT)
 
         # 2. Dessiner le grand rectangle bleu (en coordonnées locales 0, 0)
         self._window.draw_rounded_rect(0, 0, rect_w, rect_h, rect_radius, BLUE, surface=bg_img)

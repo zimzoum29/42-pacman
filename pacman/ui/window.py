@@ -15,6 +15,7 @@ DARK_BLUE: Color = (10, 10, 90)
 RED: Color = (255, 0, 0)
 PINK: Color = (255, 128, 233)
 ORANGE: Color = (255, 128, 0)
+TRANSPARENT: Color = (255, 0, 255)
 
 SCREEN_MARGIN = 80
 MIN_HEIGHT = 480
@@ -61,6 +62,7 @@ class Window:
         except pygame.error as exc:
             raise WindowError(f"cannot open window: {exc}") from exc
         self._fonts: dict[int, pygame.font.Font] = {}
+        self._images: dict[str, pygame.Surface] = {}
 
     def _center_on_screen(self):
         info = pygame.display.Info()
@@ -68,9 +70,41 @@ class Window:
         y = max((info.current_h - self.height) // 2, 0)
         os.environ["SDL_VIDEO_WINDOW_POS"] = f"{x},{y}"
 
-    def load_image(self, path: str | Path):
+    def load_image(self, path: str | Path) -> pygame.Surface | None:
+        key = str(path)
+        if key in self._images:
+            return self._images[key]
+
         try:
-            return pygame.image.load(path).convert_alpha()
+            raw = pygame.image.load(path)
+            w, h = raw.get_width(), raw.get_height()
+
+            image = self.new_image(w, h, TRANSPARENT)
+            image.set_colorkey(TRANSPARENT)
+
+            get_pixel = raw.get_at
+            put_pixel = image.set_at
+
+            if raw.get_bytesize() == 4:
+                view = raw.get_view("0")
+                buf = memoryview(view)
+                line_length = raw.get_pitch()
+
+                for y in range(h):
+                    row_idx = y * line_length
+                    for x in range(w):
+                        if buf[row_idx + (x << 2) + 3] >= 180:
+                            put_pixel((x, y), get_pixel((x, y)))
+
+                del buf
+                del view
+            else:
+                for y in range(h):
+                    for x in range(w):
+                        put_pixel((x, y), get_pixel((x, y)))
+
+            self._images[key] = image
+            return image
         except (pygame.error, FileNotFoundError) as exc:
             print(f"warning: cannot load '{path}' ({exc})")
             return None
@@ -123,7 +157,7 @@ class Window:
         x = (self.width - image.get_width()) // 2
         self.blit(image, x, y)
 
-    def new_image(self, width: int, height: int, color: Color):
+    def new_image(self, width: int, height: int, color: Color = BLACK) -> pygame.Surface:
         image = pygame.Surface((width, height))
         image.fill(color)
         return image
