@@ -83,7 +83,7 @@ class GameScreen:
                     walls.append((self._block_img, px, py))
                 else:
                     if h_wall is not None:
-                        if cell.north or self._map.cells[y - 1][x].is_closed:
+                        if not cell.north or self._map.cells[y - 1][x].is_closed:
                             walls.append((h_wall, px - half, py - half))
                         if (cell.south and y == last_y) or (y + 1 < last_y and self._map.cells[y + 1][x].is_closed):
                             walls.append((h_wall, px - half, py + size - half))
