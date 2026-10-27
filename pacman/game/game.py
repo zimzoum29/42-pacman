@@ -124,11 +124,6 @@ class Game:
         if self.pacgums_left == 0:
             self._next_level()
 
-    def _move_ghosts(self, dt: float) -> None:
-        for ghost in self.ghosts:
-            if ghost.is_active:
-                ghost.update(dt, self.map, self.new_mode)
-
     def _check_collisions(self) -> None:
         px, py = self.pacman.position
         for ghost in self.ghosts:
