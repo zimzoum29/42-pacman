@@ -7,6 +7,7 @@ from ...game.game import Game, Status
 from ...game.maze import Direction
 from ..button import Action
 from ..window import BLACK, WHITE, YELLOW, Color, Key, Window
+from ...path import ASSET_DIR
 
 HUD_HEIGHT = 0.05
 HUD_FONT_SIZE = 36
@@ -25,6 +26,13 @@ KEY_DIRECTIONS: dict[Key, Direction] = {
     Key.RIGHT: Direction.RIGHT,
 }
 
+CELL_SIZE = 60
+WALL_THICKNESS = 8
+FLOOR_PATH = ASSET_DIR / "floor.png"
+WALL_H_PATH = ASSET_DIR / "wall_h.png"
+WALL_V_PATH = ASSET_DIR / "wall_v.png"
+BLOCK_PATH = ASSET_DIR / "block.png"
+
 
 class GameScreen:
 
@@ -32,12 +40,17 @@ class GameScreen:
         self._window = window
         self._game = Game(config)
         self._last_time = time.monotonic()
+        self._floor_img = window.load_image(FLOOR_PATH)
+        self._wall_h_img = window.load_image(WALL_H_PATH)
+        self._wall_v_img = window.load_image(WALL_V_PATH)
+        self._block_img = window.load_image(BLOCK_PATH)
         self._load_level()
 
     def _load_level(self) -> None:
         self._level = self._game.level
         self._map = self._game.map
         self._compute_layout()
+        self._floors = self._build_floors()
         self._walls = self._build_walls()
         self._build_images()
 
@@ -53,27 +66,33 @@ class GameScreen:
         map_h = self._cell * self._map.height
         self._origin_x = (window.width - map_w) // 2
         self._origin_y = top + (free_h - map_h) // 2
+        self._cell = CELL_SIZE
+        self._thick = WALL_THICKNESS
 
     def _build_walls(self) -> list[tuple[pygame.Surface, int, int]]:
-        size, thick = self._cell, self._thick
-        h_wall = self._window.new_image(size + thick, thick, WALL_COLOR)
-        v_wall = self._window.new_image(thick, size + thick, WALL_COLOR)
-        block = self._window.new_image(size, size, BLOCK_COLOR)
+        size = self._cell
+        half = self._thick // 2
+        h_wall, v_wall = self._wall_h_img, self._wall_v_img
+        last_x, last_y = self._map.width - 1, self._map.height - 1
 
         walls: list[tuple[pygame.Surface, int, int]] = []
         for y, row in enumerate(self._map.cells):
             for x, cell in enumerate(row):
                 px, py = self.cell_to_pixel(x, y)
-                if cell.is_closed:
-                    walls.append((block, px, py))
-                if cell.north:
-                    walls.append((h_wall, px, py))
-                if cell.west:
-                    walls.append((v_wall, px, py))
-                if cell.south and y == self._map.height - 1:
-                    walls.append((h_wall, px, py + size))
-                if cell.east and x == self._map.width - 1:
-                    walls.append((v_wall, px + size, py))
+                if cell.is_closed and self._block_img is not None:
+                    walls.append((self._block_img, px, py))
+                else:
+                    if h_wall is not None:
+                        if cell.north or self._map.cells[y - 1][x].is_closed:
+                            walls.append((h_wall, px - half, py - half))
+                        if (cell.south and y == last_y) or (y + 1 < last_y and self._map.cells[y + 1][x].is_closed):
+                            walls.append((h_wall, px - half, py + size - half))
+                    if v_wall is not None:
+                        if cell.west or self._map.cells[y][x - 1].is_closed:
+                            walls.append((v_wall, px - half, py - half))
+                        if (cell.east and x == last_x) or (x + 1 < last_x and self._map.cells[y][x + 1].is_closed):
+                            walls.append((v_wall, px + size - half, py - half))
+
         return walls
 
     def _build_images(self) -> None:
@@ -115,6 +134,9 @@ class GameScreen:
 
     def draw(self) -> None:
         self._window.fill(BLACK)
+        if self._floor_img is not None:
+            for x, y in self._floors:
+                self._window.blit(self._floor_img, x, y)
         for image, x, y in self._walls:
             self._window.blit(image, x, y)
         self._draw_pacgums()
@@ -143,3 +165,11 @@ class GameScreen:
         px = self._origin_x + x * self._cell + offset
         py = self._origin_y + y * self._cell + offset
         self._window.blit(image, int(px), int(py))
+
+    def _build_floors(self) -> list[tuple[int, int]]:
+        floors: list[tuple[int, int]] = []
+        for y, row in enumerate(self._map.cells):
+            for x, cell in enumerate(row):
+                if not cell.is_closed:
+                    floors.append(self.cell_to_pixel(x, y))
+        return floors
