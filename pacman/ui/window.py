@@ -108,7 +108,6 @@ class Window:
                     for x in range(w):
                         ox = x << 2
                         if src_buf[s_row + ox + 3] >= 180:
-                            # Copie directe des octets en RAM (sans appel de fonction)
                             dst_buf[d_row + ox] = src_buf[s_row + ox + 2]
                             dst_buf[d_row + ox + 1] = src_buf[s_row + ox + 1]
                             dst_buf[d_row + ox + 2] = src_buf[s_row + ox]
@@ -283,12 +282,10 @@ class Window:
                     d += 2 * (cx_off - cy_off) + 1
 
     def text_at(self, text: str, x: int, y: int, size: int, color: Color):
-        """Équivalent direct de Window.string_put dans core.py."""
         surface = self._font(size).render(text, False, color)
         self._surface.blit(surface, (x, y))
 
     def text_centered_in_rect(self, text: str, rect_x: int, rect_w: int, y: int, size: int, color: Color):
-        """Centre un texte horizontalement à l'intérieur d'un segment [rect_x, rect_x + rect_w]."""
         surface = self._font(size).render(text, False, color)
         x = rect_x + (rect_w - surface.get_width()) // 2
         self._surface.blit(surface, (x, y))
