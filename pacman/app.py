@@ -31,6 +31,7 @@ class App:
             action = self._screen.update(self._window.keys())
             if action is Action.QUIT:
                 return
+
             if action is not None:
                 self._screen = self._next_screen(action)
 
@@ -42,11 +43,18 @@ class App:
                 time.sleep(spare)
 
     def _next_screen(self, action: Action) -> Screen:
-        if action is Action.PLAY:
-            return GameScreen(self._window, self._config)
-        if action is Action.LEADERBOARD:
-            return LeaderboardScreen(self._window, self._highscores.scores)
-        return HomeScreen(self._window)
+        match action:
+            case Action.PLAY:
+                return GameScreen(self._window, self._config)
+            case Action.LEADERBOARD:
+                return LeaderboardScreen(self._window, self._highscores.scores)
+            case _:
+                return HomeScreen(self._window)
+        # if action is Action.PLAY:
+        #     return GameScreen(self._window, self._config)
+        # if action is Action.LEADERBOARD:
+        #     return LeaderboardScreen(self._window, self._highscores.scores)
+        # return HomeScreen(self._window)
 
 
 def load_files(config_path: str) -> tuple[Config, Highscores]:

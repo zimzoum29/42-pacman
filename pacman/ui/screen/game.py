@@ -6,7 +6,7 @@ from ...config import Config
 from ...game.game import Game, Status
 from ...game.maze import Direction
 from ..button import Action
-from ..window import BLACK, WHITE, YELLOW, Color, Key, Window
+from ..window import BLACK, WHITE, Color, Key, Window
 from ...path import ASSET_DIR
 
 HUD_HEIGHT = 0.05
@@ -135,13 +135,15 @@ class GameScreen:
                 return Action.HOME
             if key in KEY_DIRECTIONS:
                 self._game.set_direction(KEY_DIRECTIONS[key])
+            elif key is Key.PAUSE:
+                self._game.switch_pause()
 
         now = time.monotonic()
         dt = min(now - self._last_time, MAX_DT)
         self._last_time = now
         self._game.update(dt)
 
-        if self._game.status is not Status.PLAYING:
+        if self._game.status in [Status.GAME_OVER, Status.VICTORY]:
             return Action.HOME
         if self._game.level != self._level:
             self._load_level()
