@@ -60,6 +60,7 @@ class GameScreen:
             d: window.load_image(ASSET_DIR / f"arrow_{name}.png")
             for d, name in DIRECTION_NAMES.items()
         }
+        self._pause_overlay = window.create_dither_overlay()
         self._load_level()
 
     def _load_level(self) -> None:
@@ -159,6 +160,10 @@ class GameScreen:
         self._draw_pacgums()
         self._draw_ghosts()
         self._draw_pacman()
+
+        if self._game.status is Status.PAUSE:
+            self._window.blit(self._pause_overlay, 0, 0)
+            self._window.text_centered("PAUSE", self._window.height // 2, 72, WHITE)
 
     def _draw_pacgums(self) -> None:
         for y, row in enumerate(self._map.cells):
