@@ -15,6 +15,7 @@ DARK_BLUE: Color = (10, 10, 90)
 RED: Color = (255, 0, 0)
 PINK: Color = (255, 128, 233)
 ORANGE: Color = (255, 128, 0)
+TRANSPARENT: Color = (255, 0, 255)
 
 SCREEN_MARGIN = 80
 MIN_HEIGHT = 480
@@ -61,6 +62,7 @@ class Window:
         except pygame.error as exc:
             raise WindowError(f"cannot open window: {exc}") from exc
         self._fonts: dict[int, pygame.font.Font] = {}
+        self._images: dict[str, pygame.Surface] = {}
 
     def _center_on_screen(self):
         info = pygame.display.Info()
@@ -68,9 +70,63 @@ class Window:
         y = max((info.current_h - self.height) // 2, 0)
         os.environ["SDL_VIDEO_WINDOW_POS"] = f"{x},{y}"
 
-    def load_image(self, path: str | Path):
+    def load_image(self, path: str | Path) -> pygame.Surface | None:
+        key = str(path)
+        if key in self._images:
+            return self._images[key]
+
         try:
-            return pygame.image.load(path).convert_alpha()
+            raw = pygame.image.load(path)
+
+            if raw.get_bytesize() != 4:
+                self._images[key] = raw
+                return raw
+
+            w, h = raw.get_width(), raw.get_height()
+            src_view = raw.get_view("0")
+            src_buf = memoryview(src_view)
+            src_pitch = raw.get_pitch()
+
+            if min(src_buf[3::4]) >= 180:
+                del src_buf
+                del src_view
+                self._images[key] = raw
+                return raw
+
+            image = self.new_image(w, h, TRANSPARENT)
+            image.set_colorkey(TRANSPARENT)
+
+            dst_view = image.get_view("0")
+            dst_buf = memoryview(dst_view)
+            dst_pitch = image.get_pitch()
+            dst_bpp = image.get_bytesize()
+
+            if dst_bpp == 4:
+                for y in range(h):
+                    s_row = y * src_pitch
+                    d_row = y * dst_pitch
+                    for x in range(w):
+                        ox = x << 2
+                        if src_buf[s_row + ox + 3] >= 180:
+                            dst_buf[d_row + ox] = src_buf[s_row + ox + 2]
+                            dst_buf[d_row + ox + 1] = src_buf[s_row + ox + 1]
+                            dst_buf[d_row + ox + 2] = src_buf[s_row + ox]
+            else:
+                get_pixel = raw.get_at
+                put_pixel = image.set_at
+                for y in range(h):
+                    s_row = y * src_pitch
+                    for x in range(w):
+                        if src_buf[s_row + (x << 2) + 3] >= 180:
+                            put_pixel((x, y), get_pixel((x, y)))
+
+            del dst_buf
+            del dst_view
+            del src_buf
+            del src_view
+
+            self._images[key] = image
+            return image
         except (pygame.error, FileNotFoundError) as exc:
             print(f"warning: cannot load '{path}' ({exc})")
             return None
@@ -123,7 +179,7 @@ class Window:
         x = (self.width - image.get_width()) // 2
         self.blit(image, x, y)
 
-    def new_image(self, width: int, height: int, color: Color):
+    def new_image(self, width: int, height: int, color: Color = BLACK) -> pygame.Surface:
         image = pygame.Surface((width, height))
         image.fill(color)
         return image
@@ -226,12 +282,10 @@ class Window:
                     d += 2 * (cx_off - cy_off) + 1
 
     def text_at(self, text: str, x: int, y: int, size: int, color: Color):
-        """Équivalent direct de Window.string_put dans core.py."""
         surface = self._font(size).render(text, False, color)
         self._surface.blit(surface, (x, y))
 
     def text_centered_in_rect(self, text: str, rect_x: int, rect_w: int, y: int, size: int, color: Color):
-        """Centre un texte horizontalement à l'intérieur d'un segment [rect_x, rect_x + rect_w]."""
         surface = self._font(size).render(text, False, color)
         x = rect_x + (rect_w - surface.get_width()) // 2
         self._surface.blit(surface, (x, y))
