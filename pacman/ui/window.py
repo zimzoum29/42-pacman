@@ -77,31 +77,54 @@ class Window:
 
         try:
             raw = pygame.image.load(path)
+
+            if raw.get_bytesize() != 4:
+                self._images[key] = raw
+                return raw
+
             w, h = raw.get_width(), raw.get_height()
+            src_view = raw.get_view("0")
+            src_buf = memoryview(src_view)
+            src_pitch = raw.get_pitch()
+
+            if min(src_buf[3::4]) >= 180:
+                del src_buf
+                del src_view
+                self._images[key] = raw
+                return raw
 
             image = self.new_image(w, h, TRANSPARENT)
             image.set_colorkey(TRANSPARENT)
 
-            get_pixel = raw.get_at
-            put_pixel = image.set_at
+            dst_view = image.get_view("0")
+            dst_buf = memoryview(dst_view)
+            dst_pitch = image.get_pitch()
+            dst_bpp = image.get_bytesize()
 
-            if raw.get_bytesize() == 4:
-                view = raw.get_view("0")
-                buf = memoryview(view)
-                line_length = raw.get_pitch()
-
+            if dst_bpp == 4:
                 for y in range(h):
-                    row_idx = y * line_length
+                    s_row = y * src_pitch
+                    d_row = y * dst_pitch
                     for x in range(w):
-                        if buf[row_idx + (x << 2) + 3] >= 180:
+                        ox = x << 2
+                        if src_buf[s_row + ox + 3] >= 180:
+                            # Copie directe des octets en RAM (sans appel de fonction)
+                            dst_buf[d_row + ox] = src_buf[s_row + ox + 2]
+                            dst_buf[d_row + ox + 1] = src_buf[s_row + ox + 1]
+                            dst_buf[d_row + ox + 2] = src_buf[s_row + ox]
+            else:
+                get_pixel = raw.get_at
+                put_pixel = image.set_at
+                for y in range(h):
+                    s_row = y * src_pitch
+                    for x in range(w):
+                        if src_buf[s_row + (x << 2) + 3] >= 180:
                             put_pixel((x, y), get_pixel((x, y)))
 
-                del buf
-                del view
-            else:
-                for y in range(h):
-                    for x in range(w):
-                        put_pixel((x, y), get_pixel((x, y)))
+            del dst_buf
+            del dst_view
+            del src_buf
+            del src_view
 
             self._images[key] = image
             return image
