@@ -23,6 +23,7 @@ HIT_DISTANCE = 0.42
 
 class Status(Enum):
     PLAYING = auto()
+    PAUSE = auto()
     GAME_OVER = auto()
     VICTORY = auto()
 
@@ -83,6 +84,13 @@ class Game:
 
     def set_direction(self, direction: Direction) -> None:
         self.pacman.wanted = direction
+
+    def switch_pause(self) -> None:
+        match self.status:
+            case Status.PLAYING:
+                self.status = Status.PAUSE
+            case Status.PAUSE:
+                self.status = Status.PLAYING
 
     def update(self, dt: float) -> None:
         if self.status is not Status.PLAYING:

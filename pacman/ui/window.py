@@ -33,7 +33,7 @@ class Key(Enum):
     ENTER = auto()
     ESCAPE = auto()
     QUIT = auto()
-    N = auto()
+    PAUSE = auto()
 
 
 _KEY_MAP: dict[int, Key] = {
@@ -43,7 +43,7 @@ _KEY_MAP: dict[int, Key] = {
     pygame.K_RIGHT: Key.RIGHT,
     pygame.K_RETURN: Key.ENTER,
     pygame.K_ESCAPE: Key.ESCAPE,
-    pygame.K_n: Key.N
+    pygame.K_p: Key.PAUSE
 }
 
 
@@ -235,3 +235,36 @@ class Window:
         surface = self._font(size).render(text, False, color)
         x = rect_x + (rect_w - surface.get_width()) // 2
         self._surface.blit(surface, (x, y))
+
+    def create_dither_overlay(self, color: Color = (20, 20, 20)) -> pygame.Surface:
+        """Crée un filtre tramé (1 pixel sur 2) 100% MLX (new_image + set_at)."""
+        overlay = self.new_image(self.width, self.height, TRANSPARENT)
+        overlay.set_colorkey(TRANSPARENT)
+
+        # Accès direct au buffer mémoire (_ImgInfo.addr et line_length dans core.py)
+        # pour remplir les 1,8 million de pixels instantanément au lancement
+        view = overlay.get_view("0")
+        buf = memoryview(view)
+        pitch = overlay.get_pitch()
+        bpp = overlay.get_bytesize()
+
+        if bpp == 4:
+            b, g, r = color[2], color[1], color[0]
+            # On prépare 2 lignes modèles (lignes paires et lignes impaires) en mémoire
+            row_even = bytearray(buf[:pitch])
+            row_odd = bytearray(buf[:pitch])
+            for x in range(0, self.width, 2):
+                ox = x << 2
+                row_even[ox: ox + 3] = bytes((b, g, r))
+            for x in range(1, self.width, 2):
+                ox = x << 2
+                row_odd[ox: ox + 3] = bytes((b, g, r))
+
+            # On copie les lignes d'un coup dans tout le buffer (< 1 ms !)
+            for y in range(self.height):
+                start = y * pitch
+                buf[start: start + pitch] = row_even if (y % 2 == 0) else row_odd
+
+        del buf
+        del view
+        return overlay
