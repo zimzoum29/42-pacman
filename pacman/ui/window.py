@@ -182,6 +182,8 @@ class Window:
     def new_image(self, width: int, height: int, color: Color = BLACK) -> pygame.Surface:
         image = pygame.Surface((width, height))
         image.fill(color)
+        if color == TRANSPARENT:
+            image.set_colorkey(TRANSPARENT)
         return image
 
     def pixel_put(self, x: int, y: int, color: Color, surface: pygame.Surface | None = None) -> None:
@@ -324,3 +326,52 @@ class Window:
         del buf
         del view
         return overlay
+
+    def draw_slanted_badge(
+        self,
+        x: int,
+        y: int,
+        w: int,
+        h: int,
+        radius: int,
+        slant: int,
+        color: Color,
+        surface: pygame.Surface | None = None,
+    ) -> None:
+        """
+        Dessine un rectangle avec les coins gauches arrondis et le bord droit
+        coupé en diagonale '/' (plus large en haut de `w`, plus étroit en bas de `w - slant`).
+        """
+        if w <= 0 or h <= 0:
+            return
+
+        target = self._surface if surface is None else surface
+        tw, th = target.get_width(), target.get_height()
+
+        r = max(0, min(radius, w // 2, h // 2))
+        s = max(0, min(slant, w - r))
+
+        for dy in range(h):
+            py = y + dy
+            if py < 0 or py >= th:
+                continue
+
+            # 1. Bord gauche : arrondi en haut (dy < r) et en bas (dy >= h - r)
+            if dy < r:
+                cy_off = r - dy
+                x_start = x + r - int(math.sqrt(r * r - cy_off * cy_off))
+            elif dy >= h - r:
+                cy_off = dy - (h - r - 1)
+                x_start = x + r - int(math.sqrt(r * r - cy_off * cy_off))
+            else:
+                x_start = x
+
+            # 2. Bord droit : diagonale '/' (va de x + w en haut à x + w - s en bas)
+            t = dy / (h - 1) if h > 1 else 0.0
+            x_end = x + w - int(round(s * t))
+
+            # 3. Remplissage de la ligne (clippé aux dimensions de la surface)
+            px0 = max(x_start, 0)
+            px1 = min(x_end, tw)
+            for px in range(px0, px1):
+                target.set_at((px, py), color)
