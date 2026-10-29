@@ -50,11 +50,6 @@ class App:
                 return LeaderboardScreen(self._window, self._highscores.scores)
             case _:
                 return HomeScreen(self._window)
-        # if action is Action.PLAY:
-        #     return GameScreen(self._window, self._config)
-        # if action is Action.LEADERBOARD:
-        #     return LeaderboardScreen(self._window, self._highscores.scores)
-        # return HomeScreen(self._window)
 
 
 def load_files(config_path: str) -> tuple[Config, Highscores]:
