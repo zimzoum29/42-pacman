@@ -74,13 +74,13 @@ class LeaderboardScreen:
             self._window.blit(row_bg, rect_x, rect_y)
 
             # 2. Texte du Rang (à gauche)
-            rank_rect_x = rect_x + padding
+            rank_rect_x = rect_x + padding - 5
             self._window.text_centered_in_rect(
                 f"{rank}", rank_rect_x, rank_rect_w, y, size, YELLOW
             )
 
             # 3. Texte du Nom
-            name_x = rank_rect_x + rank_rect_w + name_margin_left
+            name_x = rank_rect_x + rank_rect_w + name_margin_left + 5
             self._window.text_at(name, name_x, y, size, YELLOW)
 
             # 4. Texte du Score (à droite)
@@ -103,7 +103,7 @@ class LeaderboardScreen:
         padding = 6
         inner_h = rect_h - (padding * 2)
         inner_radius = max(4, rect_radius - padding)
-        rank_rect_w = int(inner_h * 1.6)
+        rank_rect_w = int(inner_h * 2)
         score_rect_w = 260
 
         # 1. Créer une image vierge de la taille d'une ligne (équivalent mlx.new_image)
@@ -113,8 +113,9 @@ class LeaderboardScreen:
         self._window.draw_rounded_rect(0, 0, rect_w, rect_h, rect_radius, BLUE, surface=bg_img)
 
         # 3. Dessiner le badge de rang à gauche (en coordonnées locales)
-        self._window.draw_rounded_rect(
-            padding, padding, rank_rect_w, inner_h, inner_radius, DARK_BLUE, surface=bg_img
+        slant_w = 20  # Ajuste l'inclinaison du '/' comme tu préfères (ex: 20 à 35)
+        self._window.draw_slanted_badge(
+            0, 0, rank_rect_w, rect_h, rect_radius, slant_w, DARK_BLUE, surface=bg_img
         )
 
         # 4. Dessiner le badge de score à droite (en coordonnées locales)
