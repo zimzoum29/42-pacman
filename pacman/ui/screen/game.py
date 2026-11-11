@@ -5,7 +5,7 @@ import pygame
 from ...config import Config
 from ...game.game import Game, Status
 from ...game.maze import Direction
-from ..button import Action
+from ..button import Action, Button
 from ..window import BLACK, WHITE, Color, Key, Window
 from ...path import ASSET_DIR
 
@@ -41,6 +41,13 @@ DIRECTION_NAMES: dict[Direction, str] = {
 }
 ARROW_GAP = 2       # pixels between Pac-Man and the arrow
 
+FIRST_BUTTON_Y = 0.45
+BUTTON_SPACING = 0.03
+PAUSE_BUTTONS: tuple[tuple[str, str, Action], ...] = (
+    (ASSET_DIR / "back_to_game.png", ASSET_DIR / "back_to_game_active.png", Action.PLAY),
+    (ASSET_DIR / "back_to_menu.png",ASSET_DIR / "back_to_menu_active.png", Action.HOME),
+    )
+
 
 class GameScreen:
 
@@ -62,6 +69,12 @@ class GameScreen:
         }
         self._pause_overlay = window.create_dither_overlay()
         self._load_level()
+
+        self._buttons = [
+            Button(window, idle, active, action)
+            for idle, active, action in PAUSE_BUTTONS
+        ]
+        self._selected = 0
 
     def _load_level(self) -> None:
         self._level = self._game.level
@@ -135,9 +148,22 @@ class GameScreen:
             if key is Key.ESCAPE:
                 return Action.HOME
             if key in KEY_DIRECTIONS:
-                self._game.set_direction(KEY_DIRECTIONS[key])
+                if self._game.status is Status.PAUSE:
+                    match key:
+                        case Key.UP:
+                            self._move(-1)
+                        case Key.DOWN:
+                            self._move(1)
+                else:
+                    self._game.set_direction(KEY_DIRECTIONS[key])
             elif key is Key.PAUSE:
                 self._game.switch_pause()
+            elif self._game.status is Status.PAUSE and key is Key.ENTER:
+                match self._buttons[self._selected].action:
+                    case Action.PLAY:
+                        self._game.switch_pause()
+                    case Action.HOME:
+                        return Action.HOME
 
         now = time.monotonic()
         dt = min(now - self._last_time, MAX_DT)
@@ -163,7 +189,8 @@ class GameScreen:
 
         if self._game.status is Status.PAUSE:
             self._window.blit(self._pause_overlay, 0, 0)
-            self._window.text_centered("PAUSE", self._window.height // 2, 72, WHITE)
+            self._window.text_centered("GAME PAUSED", self._window.height // 3.5, 150, WHITE)
+            self._draw_buttons()
 
     def _draw_pacgums(self) -> None:
         for y, row in enumerate(self._map.cells):
@@ -220,3 +247,16 @@ class GameScreen:
 
     def _blit_center(self, image: pygame.Surface, cx: float, cy: float) -> None:
         self._window.blit(image, int(cx - image.get_width() / 2), int(cy - image.get_height() / 2))
+
+    def _draw_buttons(self) -> None:
+        y = self._window.ratio_y(FIRST_BUTTON_Y)
+        spacing = self._window.ratio_y(BUTTON_SPACING)
+        for index, button in enumerate(self._buttons):
+            plate = button.plate(index == self._selected)
+            if plate is not None:
+                x = (self._window.width - plate.get_width()) // 2
+                self._window.blit(plate, x, y)
+            y += button.height + spacing
+
+    def _move(self, step: int) -> None:
+        self._selected = (self._selected + step) % len(self._buttons)
