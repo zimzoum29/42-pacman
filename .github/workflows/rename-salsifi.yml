@@ -1,4 +1,4 @@
-name: Rename salsifi
+name: tests
 
 on:
   push:
