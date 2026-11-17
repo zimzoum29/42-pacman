@@ -38,6 +38,9 @@ CLYDE_PATH = ASSET_DIR / "clyde.png"
 PINKY_PATH = ASSET_DIR / "pinky.png"
 INKY_PATH = ASSET_DIR / "inky.png"
 FRIGHTENED_GHOST_PATH = ASSET_DIR / "frightened_ghost.png"
+FRIGHTENED_WHITE_PATH = ASSET_DIR / "frightened_ghost_white.png"
+BLINK_START = 3.0
+BLINK_PERIOD = 0.25
 
 DIRECTION_NAMES: dict[Direction, str] = {
     Direction.UP: "up",
@@ -66,6 +69,7 @@ class GameScreen:
             "clyde": window.load_image(CLYDE_PATH),
         }
         self._frightened_img = window.load_image(FRIGHTENED_GHOST_PATH)
+        self._frightened_white_img = window.load_image(FRIGHTENED_WHITE_PATH)
         self._pacman_imgs = {
             d: window.load_image(ASSET_DIR / f"pacman_{name}.png")
             for d, name in DIRECTION_NAMES.items()
@@ -187,11 +191,11 @@ class GameScreen:
 
     def _draw_ghosts(self) -> None:
         frightened = self._game.frightened_time > 0
+        frightened_img = self._frightened_image() if frightened else None
         for ghost in self._game.ghosts:
             if not ghost.is_active:
                 continue
-            image = (self._frightened_img if frightened
-                     else self._ghost_imgs[ghost.name])
+            image = frightened_img if frightened else self._ghost_imgs[ghost.name]
             if image is not None:
                 gx, gy = ghost.position
                 self._blit_center(image, *self._cell_center(gx, gy))
@@ -235,3 +239,12 @@ class GameScreen:
 
     def _blit_center(self, image: pygame.Surface, cx: float, cy: float) -> None:
         self._window.blit(image, int(cx - image.get_width() / 2), int(cy - image.get_height() / 2))
+
+    def _frightened_image(self) -> pygame.Surface:
+        time_left = self._game.frightened_time
+        if time_left > BLINK_START:
+            return self._frightened_img
+        blink_step = int(time_left / BLINK_PERIOD)
+        if blink_step % 2 == 0:
+            return self._frightened_white_img
+        return self._frightened_img
