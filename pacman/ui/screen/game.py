@@ -41,6 +41,9 @@ FRIGHTENED_GHOST_PATH = ASSET_DIR / "frightened_ghost.png"
 FRIGHTENED_WHITE_PATH = ASSET_DIR / "frightened_ghost_white.png"
 BLINK_START = 3.0
 BLINK_PERIOD = 0.25
+GHOST_NAMES = ("blinky", "pinky", "inky", "clyde")
+GHOST_FRAMES = 2
+GHOST_FRAME_TIME = 0.15
 
 DIRECTION_NAMES: dict[Direction, str] = {
     Direction.UP: "up",
@@ -69,12 +72,19 @@ class GameScreen:
         self._wall_h_img = window.load_image(WALL_H_PATH)
         self._wall_v_img = window.load_image(WALL_V_PATH)
         self._block_img = window.load_image(BLOCK_PATH)
-        self._ghost_imgs: dict[str, str] = {
-            "pinky": window.load_image(PINKY_PATH),
-            "inky": window.load_image(INKY_PATH),
-            "blinky": window.load_image(BLINKY_PATH),
-            "clyde": window.load_image(CLYDE_PATH),
+        self._ghost_imgs = {
+            name: {
+                d: [window.load_image(
+                        ASSET_DIR / f"{name}_{dir_name}_{frame}.png")
+                    for frame in range(GHOST_FRAMES)]
+                for d, dir_name in DIRECTION_NAMES.items()
+            }
+            for name in GHOST_NAMES
         }
+        self._ghost_facing: dict[str, Direction] = {
+            name: Direction.LEFT for name in GHOST_NAMES
+        }
+        self._anim_time = 0.0
         self._frightened_img = window.load_image(FRIGHTENED_GHOST_PATH)
         self._frightened_white_img = window.load_image(FRIGHTENED_WHITE_PATH)
         self._pacman_imgs = {
@@ -185,6 +195,8 @@ class GameScreen:
         dt = min(now - self._last_time, MAX_DT)
         self._last_time = now
         self._game.update(dt)
+        if self._game.status is Status.PLAYING:
+            self._anim_time += dt
 
         if self._game.status in [Status.GAME_OVER, Status.VICTORY]:
             return Action.HOME
@@ -218,11 +230,17 @@ class GameScreen:
 
     def _draw_ghosts(self) -> None:
         frightened_img = self._frightened_image()
+        frame = int(self._anim_time / GHOST_FRAME_TIME) % GHOST_FRAMES
         for ghost in self._game.ghosts:
             if not ghost.is_active:
                 continue
-            image = (frightened_img if ghost.frightened
-                     else self._ghost_imgs[ghost.name])
+            if ghost.direction is not None:
+                self._ghost_facing[ghost.name] = ghost.direction
+            if ghost.frightened:
+                image = frightened_img
+            else:
+                facing = self._ghost_facing[ghost.name]
+                image = self._ghost_imgs[ghost.name][facing][frame]
             if image is not None:
                 gx, gy = ghost.position
                 self._blit_center(image, *self._cell_center(gx, gy))
