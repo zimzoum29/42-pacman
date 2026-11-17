@@ -86,6 +86,7 @@ class GhostMode(Enum):
 class Ghost(Entity, ABC):
 
     def __init__(self,
+                 name: str,
                  x: int,
                  y: int,
                  speed: float,
@@ -93,6 +94,7 @@ class Ghost(Entity, ABC):
                  pacman: Pacman,
                  ) -> None:
         super().__init__(x, y, speed)
+        self.name = name
         self.home = (x, y)
         self.mode = GhostMode.CHASE
         self.direction_function: Callable = self._chase
@@ -178,7 +180,7 @@ class Blinky(Ghost):
                  rng: random.Random,
                  pacman: Pacman
                  ) -> None:
-        super().__init__(x, y, speed, rng, pacman)
+        super().__init__("blinky", x, y, speed, rng, pacman)
 
     def _chase(self, maze: Map) -> None:
         self._head_towards_position(maze, self.pacman.position)
@@ -193,7 +195,7 @@ class Pinky(Ghost):
                  rng: random.Random,
                  pacman: Pacman
                  ) -> None:
-        super().__init__(x, y, speed, rng, pacman)
+        super().__init__("pinky", x, y, speed, rng, pacman)
 
     def _chase(self, maze: Map) -> None:
         self._head_towards_position(
@@ -226,7 +228,7 @@ class Inky(Ghost):
                  blinky: Blinky
                  ) -> None:
         self.blinky = blinky
-        super().__init__(x, y, speed, rng, pacman)
+        super().__init__("inky", x, y, speed, rng, pacman)
 
     def _chase(self, maze: Map) -> None:
         plus_two = self._two_tiles_ahead_pacman(self.pacman)
@@ -260,7 +262,7 @@ class Clyde(Ghost):
                  rng: random.Random,
                  pacman: Pacman
                  ) -> None:
-        super().__init__(x, y, speed, rng, pacman)
+        super().__init__("clyde", x, y, speed, rng, pacman)
 
     def _chase(self, maze: Map) -> None:
         if self._distance(self.position, self.pacman.position) > 8.0:

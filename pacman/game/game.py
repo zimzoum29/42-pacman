@@ -5,13 +5,13 @@ from ..config import Config
 from .entities import Ghost, Blinky, Inky, Pinky, Clyde, GhostMode, Pacman
 from .maze import Direction, Map
 
-MAP_WIDTH = 20
-MAP_HEIGHT = 15
+MAP_WIDTH = 12
+MAP_HEIGHT = 12
 LEVEL_COUNT = 10
 RANDOM_SEED = 0
 
-PACMAN_SPEED = 6.0
-GHOST_SPEED = 4.0
+PACMAN_SPEED = 5.0
+GHOST_SPEED = 3.0
 FAST_FACTOR = 2.0
 
 CHASE_DURATION = 10.0

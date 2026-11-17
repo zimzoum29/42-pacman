@@ -14,6 +14,7 @@ HUD_FONT_SIZE = 36
 MARGIN = 0.03
 MAX_DT = 0.1
 
+YELLOW: Color = (255, 255, 0)
 WALL_COLOR: Color = (33, 33, 222)
 BLOCK_COLOR: Color = (20, 20, 120)
 GHOST_COLOR: Color = (255, 0, 0)
@@ -26,12 +27,17 @@ KEY_DIRECTIONS: dict[Key, Direction] = {
     Key.RIGHT: Direction.RIGHT,
 }
 
-CELL_SIZE = 60
-WALL_THICKNESS = 8
+CELL_SIZE = 76
+WALL_THICKNESS = 10
 FLOOR_PATH = ASSET_DIR / "floor.png"
 WALL_H_PATH = ASSET_DIR / "wall_h.png"
 WALL_V_PATH = ASSET_DIR / "wall_v.png"
 BLOCK_PATH = ASSET_DIR / "block.png"
+BLINKY_PATH = ASSET_DIR / "blinky.png"
+CLYDE_PATH = ASSET_DIR / "clyde.png"
+PINKY_PATH = ASSET_DIR / "pinky.png"
+INKY_PATH = ASSET_DIR / "inky.png"
+FRIGHTENED_GHOST_PATH = ASSET_DIR / "frightened_ghost.png"
 
 DIRECTION_NAMES: dict[Direction, str] = {
     Direction.UP: "up",
@@ -39,7 +45,8 @@ DIRECTION_NAMES: dict[Direction, str] = {
     Direction.LEFT: "left",
     Direction.RIGHT: "right",
 }
-ARROW_GAP = 2       # pixels between Pac-Man and the arrow
+
+ARROW_GAP = 2
 
 
 class GameScreen:
@@ -52,6 +59,13 @@ class GameScreen:
         self._wall_h_img = window.load_image(WALL_H_PATH)
         self._wall_v_img = window.load_image(WALL_V_PATH)
         self._block_img = window.load_image(BLOCK_PATH)
+        self.GHOST_IMAGE: dict[str, str] = {
+            "pinky": window.load_image(PINKY_PATH),
+            "inky": window.load_image(INKY_PATH),
+            "blinky": window.load_image(BLINKY_PATH),
+            "clyde": window.load_image(CLYDE_PATH),
+        }
+        self._frightened_img = window.load_image(FRIGHTENED_GHOST_PATH)
         self._pacman_imgs = {
             d: window.load_image(ASSET_DIR / f"pacman_{name}.png")
             for d, name in DIRECTION_NAMES.items()
@@ -118,11 +132,9 @@ class GameScreen:
         self._super_size = max(cell // 3, 4)
         self._entity_size = cell // 2
         new = self._window.new_image
-        self._pacgum_img = new(self._pacgum_size, self._pacgum_size, WHITE)
-        self._super_img = new(self._super_size, self._super_size, WHITE)
+        self._pacgum_img = new(self._pacgum_size, self._pacgum_size, YELLOW)
+        self._super_img = new(self._super_size, self._super_size, YELLOW)
         size = self._entity_size
-        self._ghost_img = new(size, size, GHOST_COLOR)
-        self._frightened_img = new(size, size, FRIGHTENED_COLOR)
 
     def cell_to_pixel(self, x: int, y: int) -> tuple[int, int]:
         return (self._origin_x + x * self._cell,
@@ -175,8 +187,8 @@ class GameScreen:
 
     def _draw_ghosts(self) -> None:
         frightened = self._game.frightened_time > 0
-        image = self._frightened_img if frightened else self._ghost_img
         for ghost in self._game.ghosts:
+            image = self._frightened_img if frightened else self.GHOST_IMAGE[ghost.name]
             if ghost.is_active:
                 gx, gy = ghost.position
                 self._draw_centered(image, self._entity_size, gx, gy)
