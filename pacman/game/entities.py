@@ -99,6 +99,7 @@ class Ghost(Entity, ABC):
         self.mode = GhostMode.CHASE
         self.direction_function: Callable = self._chase
         self.respawn_time = 0.0
+        self.frightened = False
         self._rng = rng
         self.pacman = pacman
 

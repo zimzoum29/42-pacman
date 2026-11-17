@@ -124,22 +124,31 @@ class Game:
             cell.super_pacgum = False
             self.score += self.config.points_per_super_pacgum
             self.pacgums_left -= 1
-            self.frightened_time = FRIGHTENED_DURATION
+            self._frighten_ghosts()
         if self.pacgums_left == 0:
             self._next_level()
 
+    def _frighten_ghosts(self) -> None:
+        self.frightened_time = FRIGHTENED_DURATION
+        for ghost in self.ghosts:
+            if ghost.is_active:
+                ghost.frightened = True
+
+    def _calm_ghosts(self) -> None:
+        self.frightened_time = 0.0
+        for ghost in self.ghosts:
+            ghost.frightened = False
+
     def _check_collisions(self) -> None:
-        if self.player_immortality is True and self.frightened_time == 0.0:
-            return
         px, py = self.pacman.position
         for ghost in self.ghosts:
             if not ghost.is_active:
                 continue
             gx, gy = ghost.position
             if abs(px - gx) < HIT_DISTANCE and abs(py - gy) < HIT_DISTANCE:
-                if self.frightened_time > 0:
+                if ghost.frightened:
                     self._eat_ghost(ghost)
-                else:
+                elif not self.player_immortality:
                     self.lose_life()
                     return
 
@@ -147,10 +156,13 @@ class Game:
         self.score += self.config.points_per_ghost
         ghost.go_home()
         ghost.respawn_time = GHOST_RESPAWN_DELAY
+        ghost.frightened = False
 
     def _update_timers(self, dt: float) -> None:
         if self.frightened_time > 0.0:
             self.frightened_time = max(0.0, self.frightened_time - dt)
+            if self.frightened_time == 0.0:
+                self._calm_ghosts()
         else:
             self.mode_timer = max(0.0, self.mode_timer - dt)
         for ghost in self.ghosts:
@@ -167,8 +179,10 @@ class Game:
             self.status = Status.GAME_OVER
             return
         self.pacman.place(*self.spawn)
+        self._calm_ghosts()
         for ghost in self.ghosts:
             ghost.go_home()
+            ghost.respawn_time = 0.0
 
     def _switch_mode(self) -> GhostMode:
         match self.current_mode:
@@ -182,15 +196,13 @@ class Game:
                 return GhostMode.CHASE
 
     def _update_ghost_modes(self) -> None:
-        if self.frightened_time > 0:
-            mode = GhostMode.FRIGHTENED
-        elif self.mode_timer == 0.0:
-            mode = self._switch_mode()
-        else:
-            mode = self.current_mode
-
+        if self.mode_timer == 0.0:
+            self._switch_mode()
         for ghost in self.ghosts:
-            ghost.set_mode(mode)
+            if ghost.frightened:
+                ghost.set_mode(GhostMode.FRIGHTENED)
+            else:
+                ghost.set_mode(self.current_mode)
 
     def _move_ghosts(self, dt: float) -> None:
         if self.ghosts_frozen:
