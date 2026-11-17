@@ -190,12 +190,12 @@ class GameScreen:
                     self._draw_centered(self._super_img, self._super_size, x, y)
 
     def _draw_ghosts(self) -> None:
-        frightened = self._game.frightened_time > 0
-        frightened_img = self._frightened_image() if frightened else None
+        frightened_img = self._frightened_image()
         for ghost in self._game.ghosts:
             if not ghost.is_active:
                 continue
-            image = frightened_img if frightened else self._ghost_imgs[ghost.name]
+            image = (frightened_img if ghost.frightened
+                     else self._ghost_imgs[ghost.name])
             if image is not None:
                 gx, gy = ghost.position
                 self._blit_center(image, *self._cell_center(gx, gy))
