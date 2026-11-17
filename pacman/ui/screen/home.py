@@ -11,10 +11,13 @@ TITLE_Y = 0.05
 FIRST_BUTTON_Y = 0.45
 BUTTON_SPACING = 0.03
 
-SPRITE_Y = 0.92
+GHOST_Y = 0.92
+PACMAN_Y = 0.914
 SPRITE_SPEED = 11.0
-GHOST_GAP = 0.05
+GHOST_GAP = 0.065
 FRAME_TIME_SPRITE = 9
+GHOST_FRAME_TIME = 9
+GHOST_FRAMES = 2
 
 BUTTONS: tuple[tuple[str, str, Action], ...] = (
     (ASSET_DIR / "play.png", ASSET_DIR / "play_active.png", Action.PLAY),
@@ -34,10 +37,16 @@ class HomeScreen:
             Button(window, idle, active, action)
             for idle, active, action in BUTTONS
         ]
-        self._ghost = window.load_image("pacman/assets/ghost.png")
+        self._ghost_frames = [
+            window.load_image(ASSET_DIR / f"ghost_anim_{i}.png")
+            for i in range(GHOST_FRAMES)
+        ]
+        self._ghost_phase = 0
+        self._ghost_timer = 0.0
         self._pacman_x =  -window.width * GHOST_GAP
         self._ghost_x = 0.0
-        self._sprite_y = window.ratio_y(SPRITE_Y)
+        self._pacman_y = window.ratio_y(PACMAN_Y)
+        self._ghost_y = window.ratio_y(GHOST_Y)
         self._pacman_frames = [
             window.load_image(f"pacman/assets/pacman_{i}.png")
             for i in range(3)
@@ -103,6 +112,10 @@ class HomeScreen:
             self._pacman_phase = (self._pacman_phase + 1) % len(
                 self._pacman_order
             )
+        self._ghost_timer += delta
+        while self._ghost_timer >= GHOST_FRAME_TIME:
+            self._ghost_timer -= GHOST_FRAME_TIME
+            self._ghost_phase = (self._ghost_phase + 1) % GHOST_FRAMES
 
     def _draw_sprites(self):
         frame = self._pacman_frames[
@@ -110,9 +123,8 @@ class HomeScreen:
         ]
         if frame is not None:
             self._window.blit(
-                frame, int(self._pacman_x), self._sprite_y
+                frame, int(self._pacman_x), self._pacman_y
             )
-        if self._ghost is not None:
-            self._window.blit(
-                self._ghost, int(self._ghost_x), self._sprite_y
-            )
+        ghost = self._ghost_frames[self._ghost_phase]
+        if ghost is not None:
+            self._window.blit(ghost, int(self._ghost_x), self._ghost_y)

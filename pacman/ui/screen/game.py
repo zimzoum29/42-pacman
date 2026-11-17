@@ -85,8 +85,12 @@ class GameScreen:
             name: Direction.LEFT for name in GHOST_NAMES
         }
         self._anim_time = 0.0
-        self._frightened_img = window.load_image(FRIGHTENED_GHOST_PATH)
-        self._frightened_white_img = window.load_image(FRIGHTENED_WHITE_PATH)
+        self._frightened_imgs = {
+            color: [window.load_image(
+                        ASSET_DIR / f"frightened_{color}_{frame}.png")
+                    for frame in range(GHOST_FRAMES)]
+            for color in ("blue", "white")
+        }
         self._pacman_imgs = {
             d: window.load_image(ASSET_DIR / f"pacman_{name}.png")
             for d, name in DIRECTION_NAMES.items()
@@ -229,8 +233,8 @@ class GameScreen:
                     self._draw_centered(self._super_img, self._super_size, x, y)
 
     def _draw_ghosts(self) -> None:
-        frightened_img = self._frightened_image()
         frame = int(self._anim_time / GHOST_FRAME_TIME) % GHOST_FRAMES
+        frightened_img = self._frightened_image(frame)
         for ghost in self._game.ghosts:
             if not ghost.is_active:
                 continue
@@ -299,11 +303,9 @@ class GameScreen:
         self._selected = (self._selected + step) % len(self._buttons)
 
 
-    def _frightened_image(self) -> pygame.Surface:
+    def _frightened_image(self, frame: int) -> pygame.Surface:
         time_left = self._game.frightened_time
-        if time_left > BLINK_START:
-            return self._frightened_img
-        blink_step = int(time_left / BLINK_PERIOD)
-        if blink_step % 2 == 0:
-            return self._frightened_white_img
-        return self._frightened_img
+        color = "blue"
+        if time_left <= BLINK_START and int(time_left / BLINK_PERIOD) % 2 == 0:
+            color = "white"
+        return self._frightened_imgs[color][frame]
