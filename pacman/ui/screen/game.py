@@ -59,7 +59,7 @@ class GameScreen:
         self._wall_h_img = window.load_image(WALL_H_PATH)
         self._wall_v_img = window.load_image(WALL_V_PATH)
         self._block_img = window.load_image(BLOCK_PATH)
-        self.GHOST_IMAGE: dict[str, str] = {
+        self._ghost_imgs: dict[str, str] = {
             "pinky": window.load_image(PINKY_PATH),
             "inky": window.load_image(INKY_PATH),
             "blinky": window.load_image(BLINKY_PATH),
@@ -188,10 +188,13 @@ class GameScreen:
     def _draw_ghosts(self) -> None:
         frightened = self._game.frightened_time > 0
         for ghost in self._game.ghosts:
-            image = self._frightened_img if frightened else self.GHOST_IMAGE[ghost.name]
-            if ghost.is_active:
+            if not ghost.is_active:
+                continue
+            image = (self._frightened_img if frightened
+                     else self._ghost_imgs[ghost.name])
+            if image is not None:
                 gx, gy = ghost.position
-                self._draw_centered(image, self._entity_size, gx, gy)
+                self._blit_center(image, *self._cell_center(gx, gy))
 
     def _draw_centered(self, image: pygame.Surface, size: int,x: float, y: float) -> None:
         offset = (self._cell - size) // 2
