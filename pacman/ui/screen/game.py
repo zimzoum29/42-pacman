@@ -138,6 +138,8 @@ class GameScreen:
                 self._game.set_direction(KEY_DIRECTIONS[key])
             elif key is Key.PAUSE:
                 self._game.switch_pause()
+            elif key is Key.N:#temporaire
+                self._game._next_level()
 
         now = time.monotonic()
         dt = min(now - self._last_time, MAX_DT)

@@ -25,27 +25,28 @@ WINDOW_HEIGHT = 1000
 class WindowError(Exception):
     ...
 
-class Key(Enum):
 
-    UP = auto()
-    DOWN = auto()
-    LEFT = auto()
-    RIGHT = auto()
-    ENTER = auto()
-    ESCAPE = auto()
-    QUIT = auto()
-    PAUSE = auto()
+_CUSTOM = {"QUIT": -1}
+_RENAMES = {"RETURN": "ENTER"}
+_OVERRIDES = {"PAUSE": pygame.K_p}
 
 
-_KEY_MAP: dict[int, Key] = {
-    pygame.K_UP: Key.UP,
-    pygame.K_DOWN: Key.DOWN,
-    pygame.K_LEFT: Key.LEFT,
-    pygame.K_RIGHT: Key.RIGHT,
-    pygame.K_RETURN: Key.ENTER,
-    pygame.K_ESCAPE: Key.ESCAPE,
-    pygame.K_p: Key.PAUSE
-}
+def _build_members() -> dict[str, int]:
+    members: dict[str, int] = {}
+    for attr in dir(pygame):
+        if not attr.startswith("K_"):
+            continue
+        name = attr[2:].upper()#Possible remove ?
+        if name.isdigit():
+            name = f"DIGIT_{name}"#!!
+        name = _RENAMES.get(name, name)
+        members[name] = getattr(pygame, attr)
+    members.update(_OVERRIDES)
+    members.update(_CUSTOM)
+    return members
+
+
+Key = Enum("Key", _build_members())
 
 
 class Window:
@@ -137,9 +138,8 @@ class Window:
             if event.type == pygame.QUIT:
                 pressed.append(Key.QUIT)
             elif event.type == pygame.KEYDOWN:
-                key = _KEY_MAP.get(event.key)
-                if key is not None:
-                    pressed.append(key)
+                key = Key(event.key)
+                pressed.append(key)
         return pressed
 
     def ratio_y(self, ratio: float):
