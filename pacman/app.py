@@ -9,6 +9,7 @@ from .ui.screen.base import Action, Screen
 from .ui.screen.game import GameScreen
 from .ui.screen.home import HomeScreen
 from .ui.screen.leaderboard import LeaderboardScreen
+from .ui.screen.game_finished import EndScreen
 from .ui.window import Window, WindowError
 
 TARGET_FPS = 60
@@ -48,6 +49,8 @@ class App:
                 return GameScreen(self._window, self._config)
             case Action.LEADERBOARD:
                 return LeaderboardScreen(self._window, self._highscores.scores)
+            case Action.GAME_OVER:
+                return EndScreen(self._window, GameScreen(self._window, self._config)._game)
             case _:
                 return HomeScreen(self._window)
 

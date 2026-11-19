@@ -1,7 +1,7 @@
 import pygame
 import os
 import math
-from enum import Enum, auto
+from enum import Enum, auto, IntEnum
 from pathlib import Path
 
 Color = tuple[int, int, int]
@@ -46,7 +46,17 @@ def _build_members() -> dict[str, int]:
     return members
 
 
-Key = Enum("Key", _build_members())
+class _KeyBase(IntEnum):
+    @property
+    def char(self) -> str:
+        """Default (unshifted) character for this key, '' if it has none."""
+        name = pygame.key.name(self.value)
+        if name == "space":
+            return " "
+        return name if len(name) == 1 else ""
+
+
+Key = _KeyBase("Key", _build_members())
 
 
 class Window:

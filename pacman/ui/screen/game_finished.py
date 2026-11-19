@@ -1,4 +1,5 @@
 import time
+import pygame
 
 from ...game.game import Game, Status
 from ..window import Window, Key, WHITE, BLACK
@@ -12,11 +13,11 @@ class EndScreen:
         self._game_score = game.score
         self._game_status = game.status
 
-        text_bar_w = 0
-        text_bar_h = 0
-        text_bar_x = 0
-        text_bar_y = 0
-        text_bar_max_len = 0
+        text_bar_w = 800
+        text_bar_h = 200
+        text_bar_x = self._window.height // 2
+        text_bar_y = self._window.width // 4
+        text_bar_max_len = 10#temp ??
         text_bar_authorized_characters = "QWERTYUIOPASDFGHJKLZXCVBNM0123456789 "
         self._input_name = TextBar(window,
                                    text_bar_w,
@@ -27,10 +28,15 @@ class EndScreen:
                                    text_bar_authorized_characters)
 
     def update(self, keys: list[Key]) -> Action | None:
-        ...
+        for key in keys:
+            if key is Key.QUIT:
+                return Action.QUIT
+            if key is Key.ESCAPE:
+                return Action.HOME
+            self._input_name.update(key)
 
     def draw(self) -> None:
-        ...
+        self._input_name.draw()
 
     def _draw_victory(self) -> None:
         ...
@@ -39,6 +45,9 @@ class EndScreen:
         ...
 
     def _draw_name_input(self) -> None:
+        ...
+
+    def _draw_stats(self) -> None:
         ...
 
 
@@ -61,14 +70,32 @@ class TextBar:
         self._authorized_characters = authorized_characters
 
         self.actual_text = ""
+        self.text_len = 0
         self._cursor_blink = 0.5
         self._last_blink = time.monotonic()
         self._cursor_printed = True
         self._cursor_index = 0
 
-    def update(self, keys: list[Key]) -> None:
-        for key in keys:
-            if len(key)
+    def update(self, key: Key) -> None:
+        print(type(pygame.key.name(key.value)))
+        if key is Key.BACKSPACE and self._cursor_index > 0:
+            self.actual_text = (self.actual_text[:self._cursor_index - 1]
+                                + self.actual_text[self._cursor_index:])
+            self._cursor_index -= 1
+            self.text_len -= 1
+        elif key is Key.LEFT and self._cursor_index > 0:
+            self._cursor_index -= 1
+        elif key is Key.RIGHT and self._cursor_index < self.text_len:
+            self._cursor_index += 1
+        elif (len(key.char) == 1
+              and key.char.upper() in self._authorized_characters
+              and self.text_len < self._max_characters):
+            self.actual_text = (self.actual_text[:self._cursor_index]
+                                + key.char
+                                + self.actual_text[self._cursor_index:])
+            print("?")
+            self._cursor_index += 1
+            self.text_len += 1
 
     def draw(self) -> None:
         self._draw_bar()

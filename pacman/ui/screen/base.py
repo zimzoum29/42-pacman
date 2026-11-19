@@ -9,6 +9,7 @@ class Action(Enum):
     PLAY = auto()
     LEADERBOARD = auto()
     HOME = auto()
+    GAME_OVER = auto()
     QUIT = auto()
 
 
