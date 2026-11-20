@@ -50,7 +50,10 @@ class App:
             case Action.LEADERBOARD:
                 return LeaderboardScreen(self._window, self._highscores.scores)
             case Action.GAME_OVER:
-                return EndScreen(self._window, GameScreen(self._window, self._config)._game)
+                if isinstance(self._screen, GameScreen):
+                    return EndScreen(self._window, self._screen._game)
+                else:
+                    return HomeScreen(self._window)
             case _:
                 return HomeScreen(self._window)
 

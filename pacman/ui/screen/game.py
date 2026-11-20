@@ -130,6 +130,8 @@ class GameScreen:
 
     def update(self, keys: list[Key]) -> Action | None:
         for key in keys:
+            if key is Key.T:
+                return Action.GAME_OVER
             if key is Key.QUIT:
                 return Action.QUIT
             if key is Key.ESCAPE:

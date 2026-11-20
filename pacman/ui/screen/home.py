@@ -51,8 +51,6 @@ class HomeScreen:
         for key in keys:
             if key in (Key.QUIT, Key.ESCAPE):
                 return Action.QUIT
-            if key is Key.T:
-                return Action.GAME_OVER
             if key is Key.UP:
                 self._move(-1)
             elif key is Key.DOWN:

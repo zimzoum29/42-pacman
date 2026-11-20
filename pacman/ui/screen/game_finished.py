@@ -10,7 +10,11 @@ class EndScreen:
 
     def __init__(self, window: Window, game: Game) -> None:
         self._window = window
-        self._game_score = game.score
+        self.stats = {
+            "score": game.score,
+            "time_left": game.time_left,
+            "lives_left": game.lives
+        }
         self._game_status = game.status
 
         text_bar_w = 800
@@ -36,6 +40,7 @@ class EndScreen:
             self._input_name.update(key)
 
     def draw(self) -> None:
+        self._window.fill(BLACK)
         self._input_name.draw()
 
     def _draw_victory(self) -> None:
@@ -77,7 +82,6 @@ class TextBar:
         self._cursor_index = 0
 
     def update(self, key: Key) -> None:
-        print(type(pygame.key.name(key.value)))
         if key is Key.BACKSPACE and self._cursor_index > 0:
             self.actual_text = (self.actual_text[:self._cursor_index - 1]
                                 + self.actual_text[self._cursor_index:])
@@ -93,7 +97,6 @@ class TextBar:
             self.actual_text = (self.actual_text[:self._cursor_index]
                                 + key.char
                                 + self.actual_text[self._cursor_index:])
-            print("?")
             self._cursor_index += 1
             self.text_len += 1
 
