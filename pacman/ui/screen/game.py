@@ -149,7 +149,7 @@ class GameScreen:
         self._game.update(dt)
 
         if self._game.status in [Status.GAME_OVER, Status.VICTORY]:
-            return Action.HOME
+            return Action.GAME_OVER
         if self._game.level != self._level:
             self._load_level()
         return None

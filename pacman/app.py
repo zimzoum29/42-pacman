@@ -31,6 +31,7 @@ class App:
 
             action = self._screen.update(self._window.keys())
             if action is Action.QUIT:
+                self._highscores.save()
                 return
 
             if action is not None:
@@ -51,7 +52,7 @@ class App:
                 return LeaderboardScreen(self._window, self._highscores.scores)
             case Action.GAME_OVER:
                 if isinstance(self._screen, GameScreen):
-                    return EndScreen(self._window, self._screen._game)
+                    return EndScreen(self._window, self._screen._game, self._highscores)
                 else:
                     return HomeScreen(self._window)
             case _:

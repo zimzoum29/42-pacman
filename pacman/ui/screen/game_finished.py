@@ -4,18 +4,20 @@ import pygame
 from ...game.game import Game, Status
 from ..window import Window, Key, WHITE, BLACK
 from ..button import Action
+from ...highscores import Highscores
 
 
 class EndScreen:
 
-    def __init__(self, window: Window, game: Game) -> None:
+    def __init__(self, window: Window, game: Game, highscores: Highscores) -> None:
         self._window = window
         self.stats = {
             "score": game.score,
             "time_left": game.time_left,
             "lives_left": game.lives
         }
-        self._game_status = game.status
+        self._game = game
+        self._highscores = highscores
 
         text_bar_w = 800
         text_bar_h = 200
@@ -36,6 +38,9 @@ class EndScreen:
             if key is Key.QUIT:
                 return Action.QUIT
             if key is Key.ESCAPE:
+                return Action.HOME
+            if key is Key.ENTER:
+                self._highscores.update(self._input_name.current_text, self._game.score)
                 return Action.HOME
             self._input_name.update(key)
 
@@ -74,7 +79,7 @@ class TextBar:
         self._max_characters = max_characters
         self._authorized_characters = authorized_characters
 
-        self.actual_text = ""
+        self.current_text = ""
         self.text_len = 0
         self._cursor_blink = 0.5
         self._last_blink = time.monotonic()
@@ -83,8 +88,8 @@ class TextBar:
 
     def update(self, key: Key) -> None:
         if key is Key.BACKSPACE and self._cursor_index > 0:
-            self.actual_text = (self.actual_text[:self._cursor_index - 1]
-                                + self.actual_text[self._cursor_index:])
+            self.current_text = (self.current_text[:self._cursor_index - 1]
+                                + self.current_text[self._cursor_index:])
             self._cursor_index -= 1
             self.text_len -= 1
         elif key is Key.LEFT and self._cursor_index > 0:
@@ -94,9 +99,9 @@ class TextBar:
         elif (len(key.char) == 1
               and key.char.upper() in self._authorized_characters
               and self.text_len < self._max_characters):
-            self.actual_text = (self.actual_text[:self._cursor_index]
+            self.current_text = (self.current_text[:self._cursor_index]
                                 + key.char
-                                + self.actual_text[self._cursor_index:])
+                                + self.current_text[self._cursor_index:])
             self._cursor_index += 1
             self.text_len += 1
 
@@ -110,7 +115,7 @@ class TextBar:
         self._window.draw_rounded_rect_outline(self.x, self.y, self.w, self.h, 2, WHITE)
 
     def _draw_text(self) -> None:
-        self._window.text_centered_in_rect(self.actual_text, self.x, self.w, self.y, self.h // 2, WHITE)
+        self._window.text_centered_in_rect(self.current_text, self.x, self.w, self.y, self.h // 2, WHITE)
 
     def _draw_cursor(self) -> None:
         now = time.monotonic()
