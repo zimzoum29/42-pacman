@@ -23,7 +23,7 @@ class EndScreen:
         text_bar_h = 200
         text_bar_x = self._window.height // 2
         text_bar_y = self._window.width // 4
-        text_bar_max_len = 10#temp ??
+        text_bar_max_len = 12
         text_bar_authorized_characters = "QWERTYUIOPASDFGHJKLZXCVBNM0123456789 "
         self._input_name = TextBar(window,
                                    text_bar_w,
