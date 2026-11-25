@@ -39,6 +39,8 @@ PINKY_PATH = ASSET_DIR / "pinky.png"
 INKY_PATH = ASSET_DIR / "inky.png"
 FRIGHTENED_GHOST_PATH = ASSET_DIR / "frightened_ghost.png"
 FRIGHTENED_WHITE_PATH = ASSET_DIR / "frightened_ghost_white.png"
+PAUSED_TITLE_PATH = ASSET_DIR / "game_paused.png"
+PAUSED_TITLE_Y = 0.20
 BLINK_START = 3.0
 BLINK_PERIOD = 0.25
 GHOST_NAMES = ("blinky", "pinky", "inky", "clyde")
@@ -72,6 +74,7 @@ class GameScreen:
         self._wall_h_img = window.load_image(WALL_H_PATH)
         self._wall_v_img = window.load_image(WALL_V_PATH)
         self._block_img = window.load_image(BLOCK_PATH)
+        self._paused_title = window.load_image(PAUSED_TITLE_PATH)
         self._ghost_imgs = {
             name: {
                 d: [window.load_image(
@@ -195,10 +198,10 @@ class GameScreen:
                         self._game.switch_pause()
                     case Action.HOME:
                         return Action.HOME
-                self._game.set_direction(KEY_DIRECTIONS[key])
+                # self._game.set_direction(KEY_DIRECTIONS[key])
             elif key is Key.PAUSE:
                 self._game.switch_pause()
-            elif key is Key.N:#temporaire
+            elif key is Key.N:
                 self._game._next_level()
 
         now = time.monotonic()
@@ -227,7 +230,9 @@ class GameScreen:
 
         if self._game.status is Status.PAUSE:
             self._window.blit(self._pause_overlay, 0, 0)
-            self._window.text_centered("GAME PAUSED", self._window.height // 3.5, 150, WHITE)
+            if self._paused_title is not None:
+                self._window.blit_centered_x(
+                    self._paused_title, self._window.ratio_y(PAUSED_TITLE_Y))
             self._draw_buttons()
 
     def _draw_pacgums(self) -> None:
