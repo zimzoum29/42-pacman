@@ -111,11 +111,11 @@ class TextBar:
         self._draw_cursor()
 
     def _draw_bar(self) -> None:
-        self._window.draw_rounded_rect(self.x, self.y, self.w, self.h, 2, BLACK)
-        self._window.draw_rounded_rect_outline(self.x, self.y, self.w, self.h, 2, WHITE)
+        self._window.draw_rounded_rect(self.x, self.y, self.w, self.h, 20, BLACK)
+        self._window.draw_rounded_rect_outline(self.x, self.y, self.w, self.h, 20, WHITE)
 
     def _draw_text(self) -> None:
-        self._window.text_centered_in_rect(self.current_text, self.x, self.w, self.y, self.h // 2, WHITE)
+        self._window.text_centered_in_rect(self.current_text, self.x, self.y, self.w, self.h, self.h // 2, WHITE)
 
     def _draw_cursor(self) -> None:
         now = time.monotonic()

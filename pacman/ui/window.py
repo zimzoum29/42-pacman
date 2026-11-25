@@ -297,9 +297,19 @@ class Window:
         surface = self._font(size).render(text, False, color)
         self._surface.blit(surface, (x, y))
 
-    def text_centered_in_rect(self, text: str, rect_x: int, rect_w: int, y: int, size: int, color: Color):
+    def text_centered_in_rect(
+            self,
+            text: str,
+            rect_x: int,
+            rect_y: int,
+            rect_w: int,
+            rect_h: int,
+            size: int,
+            color: Color,
+            ) -> None:
         surface = self._font(size).render(text, False, color)
         x = rect_x + (rect_w - surface.get_width()) // 2
+        y = rect_y + (rect_h - surface.get_height()) // 2
         self._surface.blit(surface, (x, y))
 
     def create_dither_overlay(self, color: Color = (20, 20, 20)) -> pygame.Surface:

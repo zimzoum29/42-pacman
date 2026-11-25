@@ -74,9 +74,10 @@ class LeaderboardScreen:
             self._window.blit(row_bg, rect_x, rect_y)
 
             # 2. Texte du Rang (à gauche)
-            rank_rect_x = rect_x + padding - 5
+            rank_rect_x = rect_x + 1
+            rank_rect_y = rect_y + 4
             self._window.text_centered_in_rect(
-                f"{rank}", rank_rect_x, rank_rect_w, y, size, YELLOW
+                f"{rank}", rank_rect_x, rank_rect_y, rank_rect_w, rect_h, size, YELLOW
             )
 
             # 3. Texte du Nom
@@ -85,8 +86,9 @@ class LeaderboardScreen:
 
             # 4. Texte du Score (à droite)
             score_rect_x = rect_x + rect_w - padding - score_rect_w
+            score_rect_y = rect_y + 2
             self._window.text_centered_in_rect(
-                f"{score} pts", score_rect_x, score_rect_w, y, size, YELLOW
+                f"{score} pts", score_rect_x, score_rect_y, score_rect_w, rect_h, size, YELLOW
             )
 
             y += step
