@@ -175,8 +175,9 @@ class GameScreen:
         for key in keys:
             if key is Key.QUIT:
                 return Action.QUIT
-            if key is Key.ESCAPE:
-                return Action.HOME
+            if key is Key.ESCAPE:   
+                self._game.switch_pause()
+                continue
             if key in KEY_DIRECTIONS:
                 if self._game.status is Status.PAUSE:
                     match key:
@@ -186,8 +187,6 @@ class GameScreen:
                             self._move(1)
                 else:
                     self._game.set_direction(KEY_DIRECTIONS[key])
-            elif key is Key.PAUSE:
-                self._game.switch_pause()
             elif self._game.status is Status.PAUSE and key is Key.ENTER:
                 match self._buttons[self._selected].action:
                     case Action.PLAY:

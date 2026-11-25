@@ -8,6 +8,7 @@ from .path import HIGHSCORES_DIR
 from .ui.screen.base import Action, Screen
 from .ui.screen.game import GameScreen
 from .ui.screen.home import HomeScreen
+from .ui.screen.instructions import InstructionsScreen
 from .ui.screen.leaderboard import LeaderboardScreen
 from .ui.window import Window, WindowError
 
@@ -48,6 +49,8 @@ class App:
                 return GameScreen(self._window, self._config)
             case Action.LEADERBOARD:
                 return LeaderboardScreen(self._window, self._highscores.scores)
+            case Action.INSTRUCTIONS:
+                return InstructionsScreen(self._window, self._config)
             case _:
                 return HomeScreen(self._window)
 

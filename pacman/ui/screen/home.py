@@ -1,4 +1,5 @@
 import pygame
+import time
 
 from ..window import Key, Window
 from ..button import Action, Button
@@ -7,23 +8,27 @@ from ...path import ASSET_DIR
 BACKGROUND_PATH = ASSET_DIR / "menu_bg.png"
 TITLE_PATH = ASSET_DIR / "logo.png"
 
-TITLE_Y = 0.05
-FIRST_BUTTON_Y = 0.45
-BUTTON_SPACING = 0.03
+TITLE_Y = 0.04
+FIRST_BUTTON_Y = 0.37
+BUTTON_SPACING = 0.0
 
 GHOST_Y = 0.92
 PACMAN_Y = 0.914
-SPRITE_SPEED = 11.0
+SPRITE_SPEED = 660.0
 GHOST_GAP = 0.065
-FRAME_TIME_SPRITE = 9
-GHOST_FRAME_TIME = 9
+FRAME_TIME_SPRITE = 0.15
+GHOST_FRAME_TIME = 0.15
 GHOST_FRAMES = 2
+MAX_DT = 0.1
 
 BUTTONS: tuple[tuple[str, str, Action], ...] = (
     (ASSET_DIR / "play.png", ASSET_DIR / "play_active.png", Action.PLAY),
-    (ASSET_DIR / "leaderboard.png",ASSET_DIR / "leaderboard_active.png",Action.LEADERBOARD),
+    (ASSET_DIR / "instructions.png", ASSET_DIR / "instructions_active.png",
+     Action.INSTRUCTIONS),
+    (ASSET_DIR / "leaderboard.png", ASSET_DIR / "leaderboard_active.png",
+     Action.LEADERBOARD),
     (ASSET_DIR / "exit.png", ASSET_DIR / "exit_active.png", Action.QUIT),
-    )
+)
 
 
 class HomeScreen:
@@ -54,9 +59,13 @@ class HomeScreen:
         self._pacman_order = (0, 1, 2, 1)
         self._pacman_phase = 0
         self._pacman_timer = 0.0
+        self._last_time = time.monotonic()
 
     def update(self, keys: list[Key]):
-        self._move_sprites(delta=1)
+        now = time.monotonic()
+        dt = min(now - self._last_time, MAX_DT)
+        self._last_time = now
+        self._move_sprites(dt)
         for key in keys:
             if key in (Key.QUIT, Key.ESCAPE):
                 return Action.QUIT

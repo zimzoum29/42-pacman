@@ -10,6 +10,7 @@ class Action(Enum):
     LEADERBOARD = auto()
     HOME = auto()
     QUIT = auto()
+    INSTRUCTIONS = auto()
 
 
 class Screen(Protocol):

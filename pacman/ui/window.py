@@ -57,7 +57,11 @@ class Window:
             self.width = WINDOW_WIDTH
             self.height = WINDOW_HEIGHT
             self._center_on_screen()
-            self._surface = pygame.display.set_mode((self.width, self.height))
+            try:
+                self._surface = pygame.display.set_mode(
+                    (self.width, self.height), pygame.SCALED, vsync=1)
+            except pygame.error:
+                self._surface = pygame.display.set_mode((self.width, self.height))
             pygame.display.set_caption(title)
         except pygame.error as exc:
             raise WindowError(f"cannot open window: {exc}") from exc
@@ -79,8 +83,9 @@ class Window:
             raw = pygame.image.load(path)
 
             if raw.get_bytesize() != 4:
-                self._images[key] = raw
-                return raw
+                image = raw.convert_alpha()
+                self._images[key] = image
+                return image
 
             w, h = raw.get_width(), raw.get_height()
             src_view = raw.get_view("0")
@@ -90,8 +95,9 @@ class Window:
             if min(src_buf[3::4]) >= 180:
                 del src_buf
                 del src_view
-                self._images[key] = raw
-                return raw
+                image = raw.convert_alpha()
+                self._images[key] = image
+                return image
 
             image = self.new_image(w, h, TRANSPARENT)
             image.set_colorkey(TRANSPARENT)
