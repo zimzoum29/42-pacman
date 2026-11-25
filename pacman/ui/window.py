@@ -1,7 +1,7 @@
 import pygame
 import os
 import math
-from enum import Enum, auto
+from enum import Enum, auto, IntEnum
 from pathlib import Path
 
 Color = tuple[int, int, int]
@@ -25,27 +25,38 @@ WINDOW_HEIGHT = 1000
 class WindowError(Exception):
     ...
 
-class Key(Enum):
 
-    UP = auto()
-    DOWN = auto()
-    LEFT = auto()
-    RIGHT = auto()
-    ENTER = auto()
-    ESCAPE = auto()
-    QUIT = auto()
-    PAUSE = auto()
+_CUSTOM = {"QUIT": -1}
+_RENAMES = {"RETURN": "ENTER"}
+_OVERRIDES = {"PAUSE": pygame.K_p}
 
 
-_KEY_MAP: dict[int, Key] = {
-    pygame.K_UP: Key.UP,
-    pygame.K_DOWN: Key.DOWN,
-    pygame.K_LEFT: Key.LEFT,
-    pygame.K_RIGHT: Key.RIGHT,
-    pygame.K_RETURN: Key.ENTER,
-    pygame.K_ESCAPE: Key.ESCAPE,
-    pygame.K_p: Key.PAUSE
-}
+def _build_members() -> dict[str, int]:
+    members: dict[str, int] = {}
+    for attr in dir(pygame):
+        if not attr.startswith("K_"):
+            continue
+        name = attr[2:].upper()#Possible remove ?
+        if name.isdigit():
+            name = f"DIGIT_{name}"#!!
+        name = _RENAMES.get(name, name)
+        members[name] = getattr(pygame, attr)
+    members.update(_OVERRIDES)
+    members.update(_CUSTOM)
+    return members
+
+
+class _KeyBase(IntEnum):
+    @property
+    def char(self) -> str:
+        """Default (unshifted) character for this key, '' if it has none."""
+        name = pygame.key.name(self.value)
+        if name == "space":
+            return " "
+        return name if len(name) == 1 else ""
+
+
+Key = _KeyBase("Key", _build_members())
 
 
 class Window:
@@ -143,9 +154,8 @@ class Window:
             if event.type == pygame.QUIT:
                 pressed.append(Key.QUIT)
             elif event.type == pygame.KEYDOWN:
-                key = _KEY_MAP.get(event.key)
-                if key is not None:
-                    pressed.append(key)
+                key = Key(event.key)
+                pressed.append(key)
         return pressed
 
     def ratio_y(self, ratio: float):
@@ -293,9 +303,19 @@ class Window:
         surface = self._font(size).render(text, False, color)
         self._surface.blit(surface, (x, y))
 
-    def text_centered_in_rect(self, text: str, rect_x: int, rect_w: int, y: int, size: int, color: Color):
+    def text_centered_in_rect(
+            self,
+            text: str,
+            rect_x: int,
+            rect_y: int,
+            rect_w: int,
+            rect_h: int,
+            size: int,
+            color: Color,
+            ) -> None:
         surface = self._font(size).render(text, False, color)
         x = rect_x + (rect_w - surface.get_width()) // 2
+        y = rect_y + (rect_h - surface.get_height()) // 2
         self._surface.blit(surface, (x, y))
 
     def create_dither_overlay(self, color: Color = (20, 20, 20)) -> pygame.Surface:

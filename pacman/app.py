@@ -10,6 +10,7 @@ from .ui.screen.game import GameScreen
 from .ui.screen.home import HomeScreen
 from .ui.screen.instructions import InstructionsScreen
 from .ui.screen.leaderboard import LeaderboardScreen
+from .ui.screen.game_finished import EndScreen
 from .ui.window import Window, WindowError
 
 TARGET_FPS = 60
@@ -31,6 +32,7 @@ class App:
 
             action = self._screen.update(self._window.keys())
             if action is Action.QUIT:
+                self._highscores.save()
                 return
 
             if action is not None:
@@ -49,6 +51,11 @@ class App:
                 return GameScreen(self._window, self._config)
             case Action.LEADERBOARD:
                 return LeaderboardScreen(self._window, self._highscores.scores)
+            case Action.GAME_OVER:
+                if isinstance(self._screen, GameScreen):
+                    return EndScreen(self._window, self._screen._game, self._highscores)
+                else:
+                    return HomeScreen(self._window)
             case Action.INSTRUCTIONS:
                 return InstructionsScreen(self._window, self._config)
             case _:

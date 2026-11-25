@@ -173,6 +173,8 @@ class GameScreen:
 
     def update(self, keys: list[Key]) -> Action | None:
         for key in keys:
+            if key is Key.T:
+                return Action.GAME_OVER
             if key is Key.QUIT:
                 return Action.QUIT
             if key is Key.ESCAPE:   
@@ -193,6 +195,11 @@ class GameScreen:
                         self._game.switch_pause()
                     case Action.HOME:
                         return Action.HOME
+                self._game.set_direction(KEY_DIRECTIONS[key])
+            elif key is Key.PAUSE:
+                self._game.switch_pause()
+            elif key is Key.N:#temporaire
+                self._game._next_level()
 
         now = time.monotonic()
         dt = min(now - self._last_time, MAX_DT)
@@ -202,7 +209,7 @@ class GameScreen:
             self._anim_time += dt
 
         if self._game.status in [Status.GAME_OVER, Status.VICTORY]:
-            return Action.HOME
+            return Action.GAME_OVER
         if self._game.level != self._level:
             self._load_level()
         return None
