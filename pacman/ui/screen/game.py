@@ -40,6 +40,7 @@ INKY_PATH = ASSET_DIR / "inky.png"
 FRIGHTENED_GHOST_PATH = ASSET_DIR / "frightened_ghost.png"
 FRIGHTENED_WHITE_PATH = ASSET_DIR / "frightened_ghost_white.png"
 PAUSED_TITLE_PATH = ASSET_DIR / "game_paused.png"
+CHEAT_BUBBLE_PATH = ASSET_DIR / "cheat_bubble.png"
 PAUSED_TITLE_Y = 0.20
 BLINK_START = 3.0
 BLINK_PERIOD = 0.25
@@ -110,6 +111,15 @@ class GameScreen:
             for idle, active, action in PAUSE_BUTTONS
         ]
         self._selected = 0
+        self._cheat_bubble = window.load_image(CHEAT_BUBBLE_PATH)
+        game = self._game
+        self._cheat_keys = {
+            Key.DIGIT_1: game.toggle_immortality,
+            Key.DIGIT_2: game.toggle_ghost_freeze,
+            Key.DIGIT_3: game.toggle_fast,
+            Key.DIGIT_4: game.add_life,
+            Key.DIGIT_5: game.skip_level,
+        }
 
     def _load_level(self) -> None:
         self._level = self._game.level
@@ -198,11 +208,16 @@ class GameScreen:
                         self._game.switch_pause()
                     case Action.HOME:
                         return Action.HOME
-                # self._game.set_direction(KEY_DIRECTIONS[key])
             elif key is Key.PAUSE:
                 self._game.switch_pause()
-            elif key is Key.N:
-                self._game._next_level()
+            elif key is Key.C and self._game.status is Status.PLAYING:
+                if self._game.cheat:
+                    self._game.toggle_cheat()
+                else:
+                    self._game.cheat = True
+            elif key in self._cheat_keys and self._game.cheat:
+                self._cheat_keys[key]()
+            
 
         now = time.monotonic()
         dt = min(now - self._last_time, MAX_DT)
@@ -234,6 +249,8 @@ class GameScreen:
                 self._window.blit_centered_x(
                     self._paused_title, self._window.ratio_y(PAUSED_TITLE_Y))
             self._draw_buttons()
+        if self._game.cheat and self._game.status is Status.PLAYING:
+            self._draw_cheat()
 
     def _draw_pacgums(self) -> None:
         for y, row in enumerate(self._map.cells):
@@ -313,10 +330,17 @@ class GameScreen:
     def _move(self, step: int) -> None:
         self._selected = (self._selected + step) % len(self._buttons)
 
-
     def _frightened_image(self, frame: int) -> pygame.Surface:
         time_left = self._game.frightened_time
         color = "blue"
         if time_left <= BLINK_START and int(time_left / BLINK_PERIOD) % 2 == 0:
             color = "white"
         return self._frightened_imgs[color][frame]
+
+    def _draw_cheat(self):
+        bubble = self._cheat_bubble
+        x = (self._origin_x - bubble.get_width()) // 2
+        map_h = self._map.height * self._cell
+        y = self._origin_y + (map_h - bubble.get_height()) // 2
+        self._window.blit(bubble, max(x, 0), y)
+    

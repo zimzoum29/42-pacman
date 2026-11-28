@@ -43,9 +43,33 @@ class Game:
         self._init_cheat_variables()
 
     def _init_cheat_variables(self) -> None:
+        self.cheat = False
         self.player_immortality: bool = False
         self.ghosts_frozen = False
         self.fast = False
+
+    def toggle_cheat(self):
+        self.cheat = False
+        self.player_immortality = False
+        self.ghosts_frozen = False
+        self.fast = False
+
+
+    def toggle_immortality(self) -> None:
+            self.player_immortality = not self.player_immortality
+
+    def toggle_ghost_freeze(self) -> None:
+            self.ghosts_frozen = not self.ghosts_frozen
+
+    def toggle_fast(self) -> None:
+            self.fast = not self.fast
+
+    def add_life(self) -> None:
+            self.lives += 1
+
+    def skip_level(self) -> None:
+        if self.status is Status.PLAYING:
+            self._next_level()
 
     def _start_level(self, level: int) -> None:
         self.level = level
